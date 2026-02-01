@@ -1,26 +1,4 @@
-export type Token = Token.Attr | Token.Element | Token.Text;
-
-// TODO
-// eslint-disable-next-line @typescript-eslint/no-namespace
-export namespace Token {
-  export type Attr = {
-    type: 'attr';
-    name: string;
-    value: string;
-  };
-
-  export type Element = {
-    type: 'element';
-    name: keyof HTMLElementTagNameMap | (string & {});
-    children: (Token.Element | Token.Text)[];
-    attributes: Token.Attr[];
-  };
-
-  export type Text = {
-    type: 'text';
-    text: string;
-  };
-}
+import type { Token } from './token.js';
 
 const patterns = {
   startTag: /^<[a-z]$/,
@@ -51,7 +29,6 @@ const voidElements = [
   'wbr',
 ];
 
-// TODO: handle comments
 function addTokens(str: string, tokens: Token[], takeUntilEndTag = ''): number {
   let buffer = '';
   let i = 0;
@@ -64,7 +41,7 @@ function addTokens(str: string, tokens: Token[], takeUntilEndTag = ''): number {
 
     /*
      * TODO: random < breaks parsing (invalid attribute names, check which characters to avoid)
-     * - might be better to validate attribute names in parser rather than lexer
+     * - validate attribute names in parser or lexer?
      */
     // start tag
     if (patterns.startTag.test(buffer[buffer.length - 1] + str[i])) {
