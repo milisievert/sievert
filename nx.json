@@ -61,5 +61,11 @@
       "dependsOn": ["^build"]
     }
   },
-  "nxCloudId": "697bbb9dc348c071f282cce1"
+  "nxCloudId": "697bbb9dc348c071f282cce1",
+  "release": {
+    "projects": ["packages/*"],
+    "version": {
+      "preVersionCommand": "pnpm dlx nx run-many -t build"
+    } 
+  }
 }
