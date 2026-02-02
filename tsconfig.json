@@ -5,6 +5,9 @@
   "references": [
     {
       "path": "./libs/lexer"
+    },
+    {
+      "path": "./packages/core"
     }
   ]
 }
