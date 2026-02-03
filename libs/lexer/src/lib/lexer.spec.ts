@@ -2,7 +2,96 @@ import type { Token } from './token.js';
 
 import { tokenize } from './lexer.js';
 
+describe('lexer', () => {
+  it('should replace `\n` with ` `', () => {
+    const tokens = tokenize(`
+      <div\nid>Test\n</div>
+    `);
+
+    expect(tokens).toEqual<Token[]>([
+      {
+        type: 'element',
+        name: 'div',
+        attributes: [{ type: 'attr', name: 'id', value: '' }],
+        children: [{ type: 'text', text: 'Test ' }],
+      },
+    ]);
+  });
+
+  it('should skip unexpected end tags', () => {
+    const tokens = tokenize(`
+      <div></span>Test</div>
+    `);
+
+    expect(tokens).toEqual<Token[]>([
+      {
+        type: 'element',
+        name: 'div',
+        attributes: [],
+        children: [{ type: 'text', text: 'Test' }],
+      },
+    ]);
+  });
+
+  it('should treat slashes in start tags as whitespace', () => {
+    const tokens = tokenize(`
+      <div/ i/d=test></div>
+    `);
+
+    expect(tokens).toEqual<Token[]>([
+      {
+        type: 'element',
+        name: 'div',
+        attributes: [
+          { type: 'attr', name: 'i', value: '' },
+          { type: 'attr', name: 'd', value: 'test' },
+        ],
+        children: [],
+      },
+    ]);
+  });
+});
+
+describe('lexer:void elements', () => {
+  it('should not contain children', () => {
+    const tokens = tokenize(`
+        <br><div></div>
+    `);
+
+    expect(tokens).toEqual<Token[]>([
+      { type: 'element', name: 'br', attributes: [], children: [] },
+      { type: 'element', name: 'div', attributes: [], children: [] },
+    ]);
+  });
+
+  it('should ignore end tags', () => {
+    const tokens = tokenize(`
+      <br><div></div></br>
+    `);
+
+    expect(tokens).toEqual<Token[]>([
+      { type: 'element', name: 'br', attributes: [], children: [] },
+      { type: 'element', name: 'div', attributes: [], children: [] },
+    ]);
+  });
+});
+
 describe('lexer:elements', () => {
+  it('`<` should break and ignore closing tag', () => {
+    const tokens = tokenize(`
+      <div></div<>Test
+    `);
+
+    expect(tokens).toEqual<Token[]>([
+      {
+        type: 'element',
+        name: 'div',
+        attributes: [],
+        children: [{ type: 'text', text: 'Test' }],
+      },
+    ]);
+  });
+
   it('should tokenize children', () => {
     const tokens = tokenize(`
       <div><span></span></div>

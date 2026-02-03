@@ -1,23 +1,19 @@
-export type Token = Token.Attr | Token.Element | Token.Text;
+export type Token = AttrToken | ElementToken | TextToken;
 
-// TODO
-// eslint-disable-next-line @typescript-eslint/no-namespace
-export namespace Token {
-  export type Attr = {
-    type: 'attr';
-    name: string;
-    value: string;
-  };
+export type AttrToken = {
+  type: 'attr';
+  name: string;
+  value: string;
+};
 
-  export type Element = {
-    type: 'element';
-    name: keyof HTMLElementTagNameMap | (string & {});
-    children: (Token.Element | Token.Text)[];
-    attributes: Token.Attr[];
-  };
+export type ElementToken = {
+  type: 'element';
+  name: keyof HTMLElementTagNameMap | (string & {});
+  children: (ElementToken | TextToken)[];
+  attributes: AttrToken[];
+};
 
-  export type Text = {
-    type: 'text';
-    text: string;
-  };
-}
+export type TextToken = {
+  type: 'text';
+  text: string;
+};
