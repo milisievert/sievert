@@ -97,7 +97,6 @@ function notifySink(sink: Sink): void {
 
   sink.dirty = true;
 
-  // TODO: changed sinks.sources to sinks.sinks, check if correct
   if (isSource(sink) && sink.sinks.length > 0) {
     sink.sinks.forEach(notifySink);
   }
