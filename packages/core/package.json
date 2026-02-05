@@ -1,5 +1,5 @@
 {
-  "name": "@sievert/core",
+  "name": "core",
   "version": "0.0.1",
   "type": "module",
   "main": "./dist/index.js",
@@ -18,5 +18,24 @@
     "dist",
     "!**/*.tsbuildinfo"
   ],
+  "nx": {
+    "targets": {
+      "build": {
+        "executor": "@nx/esbuild:esbuild",
+        "outputs": [
+          "{options.outputPath}"
+        ],
+        "options": {
+          "outputPath": "packages/core/dist",
+          "main": "packages/core/src/index.ts",
+          "tsConfig": "packages/core/tsconfig.lib.json",
+          "format": [
+            "esm"
+          ],
+          "declarationRootDir": "packages/core/src"
+        }
+      }
+    }
+  },
   "dependencies": {}
 }
