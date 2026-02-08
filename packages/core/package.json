@@ -19,6 +19,7 @@
     "!**/*.tsbuildinfo"
   ],
   "nx": {
+    "tags": ["scope:other", "type:public-api"],
     "targets": {
       "build": {
         "executor": "@nx/esbuild:esbuild",
@@ -37,5 +38,7 @@
       }
     }
   },
-  "dependencies": {}
+  "dependencies": {
+    "@sievert/signals": "workspace:*"
+  }
 }

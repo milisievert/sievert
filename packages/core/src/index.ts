@@ -1,1 +1,1 @@
-export * from './lib/core.js';
+export { signal, computed, isSignal } from '@sievert/signals';

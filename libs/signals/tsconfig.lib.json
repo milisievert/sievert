@@ -5,14 +5,14 @@
     "rootDir": "src",
     "outDir": "dist",
     "tsBuildInfoFile": "dist/tsconfig.lib.tsbuildinfo",
-    "emitDeclarationOnly": true,
+    "emitDeclarationOnly": false,
     "forceConsistentCasingInFileNames": true,
     "types": ["node"]
   },
   "include": ["src/**/*.ts"],
   "references": [
     {
-      "path": "../graph/tsconfig.lib.json"
+      "path": "../../packages/core/tsconfig.lib.json"
     }
   ],
   "exclude": [

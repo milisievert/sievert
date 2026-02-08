@@ -10,7 +10,7 @@ export default defineConfig(() => ({
   //  plugins: [],
   // },
   test: {
-    name: 'graph',
+    name: '@sievert/graph',
     watch: false,
     globals: true,
     environment: 'node',
