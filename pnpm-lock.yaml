@@ -100,6 +100,12 @@ importers:
 
   libs/lexer: {}
 
+  libs/signals:
+    dependencies:
+      '@sievert/graph':
+        specifier: workspace:*
+        version: link:../graph
+
   packages/core: {}
 
 packages:
