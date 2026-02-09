@@ -1,0 +1,10 @@
+{
+  "nx-console": {
+    "initialGitRef": {
+      "ref": "df3c4cbf06693915b6183a51efebd816967ad072",
+      "subject": "Merge pull request #20 from milisievert/test/write-signals-tests"
+    },
+    "targetVersion": "latest",
+    "confirmedPackageUpdates": true
+  }
+}
