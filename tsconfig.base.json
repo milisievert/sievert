@@ -17,11 +17,12 @@
     "strict": true,
     "target": "es2022",
     "customConditions": ["@sievert/source"],
+    "rootDir": ".",
     "paths": {
-      "@sievert/graph": ["./libs/graph/src/index.ts"],
+      "@sievertjs/core": ["./packages/core/src/index.ts"],
       "@sievert/lexer": ["./libs/lexer/src/index.ts"],
-      "@sievert/signals": ["./libs/signals/src/index.ts"],
-      "@sievertjs/core": ["./packages/core/src/index.ts"]
+      "@sievert/graph": ["./libs/graph/src/index.ts"],
+      "@sievert/signals": ["./libs/signals/src/index.ts"]
     }
   }
 }

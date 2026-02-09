@@ -4,7 +4,7 @@ export default defineConfig(() => ({
   root: __dirname,
   cacheDir: '../../node_modules/.vite/libs/signals',
   test: {
-    name: 'signals',
+    name: '@sievert/signals',
     watch: false,
     globals: true,
     environment: 'node',

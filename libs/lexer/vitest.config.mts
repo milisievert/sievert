@@ -4,7 +4,7 @@ export default defineConfig(() => ({
   root: __dirname,
   cacheDir: '../../node_modules/.vite/libs/lexer',
   test: {
-    name: 'lexer',
+    name: '@sievert/lexer',
     watch: false,
     globals: true,
     environment: 'node',

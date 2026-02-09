@@ -10,7 +10,7 @@ export default defineConfig(() => ({
   //  plugins: [],
   // },
   test: {
-    name: 'signals',
+    name: '@sievert/signals',
     watch: false,
     globals: true,
     environment: 'node',

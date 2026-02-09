@@ -4,7 +4,7 @@ export default defineConfig(() => ({
   root: __dirname,
   cacheDir: '../../node_modules/.vite/libs/graph',
   test: {
-    name: 'graph',
+    name: '@sievert/graph',
     watch: false,
     globals: true,
     environment: 'node',

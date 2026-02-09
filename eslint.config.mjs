@@ -1,4 +1,5 @@
 import nx from '@nx/eslint-plugin';
+import { domainRule } from './tools/domain-rule.mjs';
 
 export default [
   ...nx.configs['flat/base'],
@@ -18,13 +19,25 @@ export default [
       '@nx/enforce-module-boundaries': [
         'error',
         {
-          enforceBuildableLibDependency: false, // enabe after converting to buildable libs
+          enforceBuildableLibDependency: true,
           allow: ['^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$'],
           depConstraints: [
             {
-              sourceTag: '*',
-              onlyDependOnLibsWithTags: ['*'],
+              sourceTag: 'type:app',
+              onlyDependOnLibsWithTags: ['type:public-api'],
             },
+            {
+              sourceTag: 'type:public-api',
+              onlyDependOnLibsWithTags: ['type:internal'],
+            },
+            {
+              sourceTag: 'type:internal',
+              onlyDependOnLibsWithTags: ['type:internal', 'type:public-api'],
+            },
+            ...domainRule({
+              domain: 'core',
+              allowedDomains: [],
+            }),
           ],
         },
       ],
