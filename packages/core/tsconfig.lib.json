@@ -12,7 +12,7 @@
   "include": ["src/**/*.ts"],
   "references": [
     {
-      "path": "../../libs/graph/tsconfig.lib.json"
+      "path": "../../libs/signals/tsconfig.lib.json"
     }
   ]
 }
