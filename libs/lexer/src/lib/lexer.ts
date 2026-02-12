@@ -1,4 +1,4 @@
-import type { AttrToken, ElementToken, Token } from './token.js';
+import type { AttrToken, ElementToken, TextToken, Token } from './token.js';
 
 const START_TAG = /^<[a-z]$/;
 const TAG_NAME = /^[a-z]+[^\s/>]*$/;
@@ -27,7 +27,11 @@ const voidElements = [
   'wbr',
 ];
 
-function addTokens(str: string, tokens: Token[], takeUntilEndTag = ''): number {
+function addTokens(
+  str: string,
+  tokens: (ElementToken | TextToken)[],
+  takeUntilEndTag = '',
+): number {
   let buffer = '';
   let i = 0;
 
@@ -282,8 +286,8 @@ function trimWhitespace(tokens: Token[]): void {
   }
 }
 
-export function tokenize(str: string): Token[] {
-  const tokens: Token[] = [];
+export function tokenize(str: string): (ElementToken | TextToken)[] {
+  const tokens: (ElementToken | TextToken)[] = [];
   addTokens(str.trim(), tokens);
   trimWhitespace(tokens);
   return tokens;
