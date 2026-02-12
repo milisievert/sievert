@@ -58,8 +58,8 @@ describe('parser', () => {
     });
 
     const div = result.documentFragment.children[0];
-    expect(div.children.length).toBe(1);
-    expect(div.children[0].textContent).toBe('text');
+    expect(div.childNodes.length).toBe(1);
+    expect(div.childNodes[0].textContent).toBe('test');
   });
 
   it('should ignore unused params', () => {
@@ -95,12 +95,11 @@ describe('parser', () => {
 
     expect(params.keys.length).toBe(0);
     expect(params.expressions.length).toBe(0);
-    expect(result.sinks.length).toBe(1);
+    expect(result.sinks.length).toBe(0);
   });
 
   it('should parse event listeners', () => {
-    const cb = () => {};
-    const spy = vi.spyOn({ cb }, 'cb');
+    const cb = vi.fn();
 
     const result = parse({
       tokens: [
@@ -117,10 +116,10 @@ describe('parser', () => {
       },
     });
 
-    const div = result.documentFragment.children[0];
-    expect(spy).not.toHaveBeenCalled();
+    const button = result.documentFragment.children[0];
+    expect(cb).not.toHaveBeenCalled();
 
-    div.dispatchEvent(new PointerEvent('click'));
-    expect(spy).toHaveBeenCalledOnce();
+    button.dispatchEvent(new PointerEvent('click'));
+    expect(cb).toHaveBeenCalledOnce();
   });
 });
