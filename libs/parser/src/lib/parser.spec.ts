@@ -121,6 +121,6 @@ describe('parser', () => {
     expect(spy).not.toHaveBeenCalled();
 
     div.dispatchEvent(new PointerEvent('click'));
-    expect(spy).toHaveBeenCalledOnce()
+    expect(spy).toHaveBeenCalledOnce();
   });
 });
