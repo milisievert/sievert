@@ -19,7 +19,7 @@
     "!**/*.tsbuildinfo"
   ],
   "nx": {
-    "tags": ["scope:other", "type:public-api"],
+    "tags": ["scope:core", "type:api"],
     "targets": {
       "build": {
         "executor": "@nx/esbuild:esbuild",

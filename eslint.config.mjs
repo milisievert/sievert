@@ -1,5 +1,5 @@
 import nx from '@nx/eslint-plugin';
-import { domainRule } from './tools/domain-rule.mjs';
+import { createScopeRules } from './tools/create-scope-rules.mjs';
 
 export default [
   ...nx.configs['flat/base'],
@@ -24,19 +24,19 @@ export default [
           depConstraints: [
             {
               sourceTag: 'type:app',
-              onlyDependOnLibsWithTags: ['type:public-api'],
+              onlyDependOnLibsWithTags: ['type:api'],
             },
             {
-              sourceTag: 'type:public-api',
+              sourceTag: 'type:api',
               onlyDependOnLibsWithTags: ['type:internal'],
             },
             {
               sourceTag: 'type:internal',
-              onlyDependOnLibsWithTags: ['type:internal', 'type:public-api'],
+              onlyDependOnLibsWithTags: ['type:internal', 'type:api'],
             },
-            ...domainRule({
-              domain: 'core',
-              allowedDomains: [],
+            ...createScopeRules({
+              scope: 'core',
+              allowedScopes: [],
             }),
           ],
         },
