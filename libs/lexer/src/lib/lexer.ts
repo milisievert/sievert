@@ -182,9 +182,6 @@ export function tokenize(str: string): NodeToken[] {
 
     const tagTerminator = next();
 
-    if (tagTerminator === '/') {
-    }
-
     if (tagTerminator !== '>') {
       throw new Error(
         `Unexpected terminator "${tagTerminator}" for comment at position ${pos - 1}`,
@@ -225,7 +222,7 @@ export function tokenize(str: string): NodeToken[] {
 
     while (hasNext()) {
       if (peek() === '<') {
-        let nextChar = peekAhead(1);
+        const nextChar = peekAhead(1);
 
         if (nextChar && isAlpha(nextChar.charCodeAt(0))) {
           if ((bufferedText = flush())) {

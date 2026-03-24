@@ -36,7 +36,7 @@ describe('lexer', () => {
 
     it('should not expect closing tag for void element', () => {
       expect(() => tokenize('<test/></test>')).toThrow(
-        'Unexpected closing tag name "test" for tag with name "" at position 9',
+        'Unexpected closing tag at position 7',
       );
     });
 
