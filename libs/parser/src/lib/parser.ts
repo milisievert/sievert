@@ -1,4 +1,9 @@
-import type { AttrToken, ElementToken, TextToken } from '@sievert/lexer';
+import type {
+  AttrToken,
+  ElementToken,
+  NodeToken,
+  TextToken,
+} from '@sievert/lexer';
 import type { Sink } from '@sievert/graph';
 import { read, transformNode } from '@sievert/graph';
 import { getSource, isSignal } from '@sievert/signals';
@@ -13,7 +18,7 @@ import {
 } from './params.js';
 
 type ParserOptions = {
-  tokens: (ElementToken | TextToken)[];
+  tokens: NodeToken[];
   params: Params;
 };
 
@@ -106,7 +111,7 @@ function parseElement(
 // TODO: handle all functions as reactive reads
 function parseText(token: TextToken, params: Params, sinks: Sink[]): Text {
   const text = document.createTextNode('');
-  const content = decode(token.text);
+  const content = decode(token.content);
 
   const takeCount = getCount(params, content);
   const take = shiftMany(params, takeCount);
