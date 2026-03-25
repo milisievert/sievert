@@ -1,144 +1,260 @@
-import type {
-  AttrToken,
-  ElementToken,
-  NodeToken,
-  TextToken,
-} from '@sievert/lexer';
-import type { Sink } from '@sievert/graph';
-import { read, transformNode } from '@sievert/graph';
-import { getSource, isSignal } from '@sievert/signals';
-import { decode } from './decoder.js';
-import {
-  getCount,
-  Params,
-  replaceAll,
-  replaceAllSignals,
-  shiftMany,
-  shiftUnsafe,
-} from './params.js';
+import { Attribute, SvNode } from './nodes.js';
 
-type ParserOptions = {
-  tokens: NodeToken[];
-  params: Params;
-};
+function isAlpha(code: number) {
+  return (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
+}
 
-export type ParserResult = {
-  documentFragment: DocumentFragment;
-  sinks: Sink[];
-};
+function isNum(code: number) {
+  return code >= 48 && code <= 57;
+}
 
-/*
- * TODO: ref. chatgpt:Improving template reactivity
- * - generate generic updater functions rather than actual subscibers
- * - this makes the compiled template+updaters cachable
- * - the template should be cloned, and the updaters should be used for constructing the actual subscribers, per instance
- */
-// (TODO: handle unexpected params like out of place conditionals)
-export function parse({ tokens, params }: ParserOptions): ParserResult {
-  const result: ParserResult = {
-    documentFragment: document.createDocumentFragment(),
-    sinks: [],
+function isWhitespace(code: number) {
+  return code === 32 || code === 10 || code === 9 || code === 13;
+}
+
+function isTagNameChar(char: string) {
+  const code = char.charCodeAt(0);
+  return isAlpha(code) || isNum(code) || char === '-';
+}
+
+function isAttrNameChar(char: string) {
+  const code = char.charCodeAt(0);
+  return (
+    isAlpha(code) ||
+    isNum(code) ||
+    char === '-' ||
+    char === '_' ||
+    char === ':' ||
+    char === '@'
+  );
+}
+
+function isOpeningTagTerminator(char: string) {
+  return char === '/' || char === '>';
+}
+
+function isUnquotedAttrValueChar(char: string) {
+  const code = char.charCodeAt(0);
+  return !isWhitespace(code) && !isOpeningTagTerminator(char);
+}
+
+export function parse(str: string): SvNode[] {
+  let pos = 0;
+  let buf = '';
+
+  const peek = () => str[pos];
+  const next = () => str[pos++];
+  const skip = (count = 1) => (pos += count);
+
+  const hasNext = () => pos < str.length;
+  const peekAhead = (offset: number) => str[pos + offset];
+
+  const skipWhitespace = () => {
+    while (hasNext() && isWhitespace(peek().charCodeAt(0))) {
+      skip();
+    }
   };
 
-  for (const token of tokens) {
-    if (token.type === 'element') {
-      result.documentFragment.appendChild(
-        parseElement(token, params, result.sinks),
-      );
+  const flush = (): SvNode | undefined => {
+    if (!buf) {
+      return;
     }
-    if (token.type === 'text') {
-      result.documentFragment.appendChild(
-        parseText(token, params, result.sinks),
-      );
+
+    const content = buf;
+    buf = '';
+
+    return { type: 'text', content };
+  };
+
+  const readAttribute = (): Attribute => {
+    let name = '';
+    let value = '';
+
+    while (hasNext() && isAttrNameChar(peek())) {
+      name += next();
     }
-  }
 
-  return result;
-}
+    skipWhitespace();
 
-function parseElement(
-  token: ElementToken,
-  params: Params,
-  sinks: Sink[],
-): Element {
-  const element = document.createElement(token.name);
+    if (peek() === '=') {
+      skip(); // =
 
-  // TODO: should extract separate method for attribute processing
-  for (const attr of token.attributes) {
-    if (isEventListener(attr, params)) {
-      const { expression } = shiftUnsafe(params);
-      element.addEventListener(attr.name.substring(2), expression);
-    } else {
-      if (attr.value === params.keys[0]) {
-        // handle token containing params
-        const { expression } = shiftUnsafe(params);
+      const maybeValueTerminator = peek();
 
-        // handle all functions as reactive reads
-        if (typeof expression === 'function') {
-          const source = isSignal(expression)
-            ? getSource(expression)
-            : transformNode(expression);
+      if (maybeValueTerminator === '"' || maybeValueTerminator === "'") {
+        skip(); // " or '
 
-          sinks.push({
-            fn: () => {
-              element.setAttribute(attr.name, read(source) as string);
-            },
-            sources: [],
-          });
-        } else {
-          // handle all non-functions as static values
-          element.setAttribute(attr.name, expression);
+        while (hasNext() && peek() !== maybeValueTerminator) {
+          value += next();
+        }
+
+        if (next() !== maybeValueTerminator) {
+          throw new Error(
+            `Unterminated attribute with name "${name}" at position ${pos - 1}`,
+          );
         }
       } else {
-        // handle token not containing params
-        element.setAttribute(attr.name, attr.value);
+        while (hasNext() && isUnquotedAttrValueChar(peek())) {
+          value += next();
+        }
       }
     }
-  }
 
-  for (const child of token.children) {
-    if (child.type === 'element') {
-      element.appendChild(parseElement(child, params, sinks));
+    return { name, value };
+  };
+
+  const readElement = (): SvNode => {
+    skip(); // <
+    let name = '';
+
+    while (hasNext() && isTagNameChar(peek())) {
+      name += next();
     }
-    if (child.type === 'text') {
-      element.appendChild(parseText(child, params, sinks));
+
+    if (!hasNext()) {
+      throw new Error(
+        `Unterminated opening tag with name "${name}" at position ${pos}`,
+      );
     }
-  }
 
-  return element;
-}
+    const nameTerminator = next();
 
-// TODO: handle all functions as reactive reads
-function parseText(token: TextToken, params: Params, sinks: Sink[]): Text {
-  const text = document.createTextNode('');
-  const content = decode(token.content);
+    if (
+      !isWhitespace(nameTerminator.charCodeAt(0)) &&
+      !isOpeningTagTerminator(nameTerminator)
+    ) {
+      throw new Error(
+        `Unexpected terminator "${nameTerminator}" for tag with name "${name}" at position ${pos - 1}`,
+      );
+    }
 
-  const takeCount = getCount(params, content);
-  const take = shiftMany(params, takeCount);
+    let tagTerminator: string;
+    const attributes: Attribute[] = [];
 
-  /*
-   * TODO: need to rethink this part, need to find a scalable and less error prone solution
-   * - could split text token based on expressions. Eg. token could contain some text, a contitional, and a signal
-   */
-  // if (take.expressions.some(isConditional)) {
-  // }
+    if (isOpeningTagTerminator(nameTerminator)) {
+      tagTerminator = nameTerminator;
+    } else {
+      skipWhitespace();
 
-  if (take.expressions.some(isSignal)) {
-    sinks.push({
-      fn: () => (text.textContent = replaceAllSignals(take, content)),
-      sources: [],
-    });
-  } else {
-    text.textContent = replaceAll(take, content);
-  }
+      while (hasNext() && isAlpha(peek().charCodeAt(0))) {
+        attributes.push(readAttribute());
+        skipWhitespace();
+      }
 
-  return text;
-}
+      tagTerminator = next();
+    }
 
-function isEventListener(token: AttrToken, params: Params) {
-  return (
-    token.name.startsWith('on') &&
-    token.value === params.keys[0] &&
-    typeof params.expressions[0] === 'function'
-  );
+    const isSelfClosing = tagTerminator === '/';
+
+    if (tagTerminator !== '>' && !(isSelfClosing && next() === '>')) {
+      throw new Error(
+        `Unexpected terminator "${tagTerminator}" for tag with name "${name}" at position ${pos - 1}`,
+      );
+    }
+
+    let children: SvNode[];
+
+    if (isSelfClosing) {
+      children = [];
+    } else {
+      children = readNodes(name);
+    }
+
+    return { type: 'element', name, attributes, children };
+  };
+
+  const readComment = (): SvNode => {
+    let content = '';
+
+    skip(2); // <!
+
+    if (!hasNext() || next() !== '-' || next() !== '-') {
+      throw new Error(`Unexpected bogus comment at position ${pos}`);
+    }
+
+    while (hasNext() && (peek() !== '-' || peekAhead(1) !== '-')) {
+      content += next();
+    }
+
+    if (!hasNext() || next() !== '-' || next() !== '-') {
+      throw new Error(`Unexpected terminator for comment at position ${pos}`);
+    }
+
+    const tagTerminator = next();
+
+    if (tagTerminator !== '>') {
+      throw new Error(
+        `Unexpected terminator "${tagTerminator}" for comment at position ${pos - 1}`,
+      );
+    }
+
+    return { type: 'comment', content };
+  };
+
+  const closeElement = (tagName: string) => {
+    skip(2); // </
+    let name = '';
+
+    while (hasNext() && isTagNameChar(peek())) {
+      name += next();
+    }
+
+    if (name !== tagName) {
+      throw new Error(
+        `Unexpected closing tag name "${name}" for tag with name "${tagName}" at position ${pos - name.length}`,
+      );
+    }
+
+    skipWhitespace();
+
+    const tagTerminator = next();
+
+    if (tagTerminator !== '>') {
+      throw new Error(
+        `Unexpected terminator "${tagTerminator}" for closing tag with name "${name}" at position ${pos - 1}`,
+      );
+    }
+  };
+
+  const readNodes = (closingTagName = '') => {
+    const nodes: SvNode[] = [];
+    let bufferedText: SvNode | undefined;
+
+    while (hasNext()) {
+      if (peek() === '<') {
+        const nextChar = peekAhead(1);
+
+        if (nextChar && isAlpha(nextChar.charCodeAt(0))) {
+          if ((bufferedText = flush())) {
+            nodes.push(bufferedText);
+          }
+          nodes.push(readElement());
+        } else if (nextChar === '!') {
+          if ((bufferedText = flush())) {
+            nodes.push(bufferedText);
+          }
+          nodes.push(readComment());
+        } else if (nextChar === '/') {
+          if (!closingTagName) {
+            throw new Error(`Unexpected closing tag at position ${pos}`);
+          }
+          if ((bufferedText = flush())) {
+            nodes.push(bufferedText);
+          }
+          closeElement(closingTagName);
+          break;
+        }
+      } else {
+        buf += next();
+      }
+    }
+
+    if ((bufferedText = flush())) {
+      nodes.push(bufferedText);
+    }
+
+    return nodes;
+  };
+
+  return readNodes();
 }

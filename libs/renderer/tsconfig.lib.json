@@ -10,7 +10,17 @@
     "types": ["node"]
   },
   "include": ["src/**/*.ts"],
-  "references": [],
+  "references": [
+    {
+      "path": "../signals/tsconfig.lib.json"
+    },
+    {
+      "path": "../graph/tsconfig.lib.json"
+    },
+    {
+      "path": "../parser/tsconfig.lib.json"
+    }
+  ],
   "exclude": [
     "vite.config.ts",
     "vite.config.mts",

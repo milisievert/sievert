@@ -1,19 +1,13 @@
-/// <reference types='vitest' />
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig(() => ({
-  root: import.meta.dirname,
-  cacheDir: '../../node_modules/.vite/libs/lexer',
-  plugins: [],
-  // Uncomment this if you are using workers.
-  // worker: {
-  //  plugins: [],
-  // },
+  root: __dirname,
+  cacheDir: '../../node_modules/.vite/libs/renderer',
   test: {
-    name: '@sievert/lexer',
+    name: '@sievert/renderer',
     watch: false,
     globals: true,
-    environment: 'node',
+    environment: 'happy-dom',
     include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     reporters: ['default'],
     coverage: {

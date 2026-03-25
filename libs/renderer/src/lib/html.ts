@@ -1,5 +1,5 @@
-import { tokenize } from '@sievert/lexer';
-import { parse } from './parser.js';
+import { parse } from '@sievert/parser';
+import { render } from './renderer.js';
 
 export function html(
   parts: TemplateStringsArray,
@@ -9,8 +9,8 @@ export function html(
   const keys = expressions.map(() => crypto.randomUUID());
   const template = String.raw(parts, ...keys);
 
-  return parse({
-    tokens: tokenize(template),
+  return render({
+    tokens: parse(template),
     params: { keys, expressions },
   });
 }

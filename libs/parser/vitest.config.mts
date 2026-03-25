@@ -7,7 +7,7 @@ export default defineConfig(() => ({
     name: '@sievert/parser',
     watch: false,
     globals: true,
-    environment: 'happy-dom',
+    environment: 'node',
     include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     reporters: ['default'],
     coverage: {
