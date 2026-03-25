@@ -7,7 +7,7 @@
       "path": "./packages/core"
     },
     {
-      "path": "./libs/lexer"
+      "path": "./libs/parser"
     },
     {
       "path": "./libs/graph"
@@ -16,7 +16,7 @@
       "path": "./libs/signals"
     },
     {
-      "path": "./libs/parser"
+      "path": "./libs/renderer"
     }
   ]
 }
