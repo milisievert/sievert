@@ -14,11 +14,11 @@
     "@nx/vitest": "22.6.3",
     "@nx/web": "22.6.3",
     "@swc-node/register": "1.11.1",
-    "@swc/core": "1.15.5",
-    "@swc/helpers": "0.5.18",
+    "@swc/core": "1.15.21",
+    "@swc/helpers": "0.5.20",
     "@types/node": "25.2.2",
-    "@vitest/coverage-v8": "^4.0.18",
-    "@vitest/ui": "^4.0.18",
+    "@vitest/coverage-v8": "^4.1.2",
+    "@vitest/ui": "^4.1.2",
     "esbuild": "^0.27.3",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
@@ -32,9 +32,9 @@
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.55.0",
     "verdaccio": "^6.2.5",
-    "vite": "^7.3.1",
+    "vite": "^8.0.3",
     "vite-plugin-dts": "~4.5.4",
-    "vitest": "^4.0.18"
+    "vitest": "^4.1.2"
   },
   "nx": {
     "includedScripts": [],
