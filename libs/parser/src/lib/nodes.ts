@@ -1,6 +1,6 @@
 export type ElementNode = {
   type: 'element';
-  name: keyof HTMLElementTagNameMap | (string & {});
+  tagName: keyof HTMLElementTagNameMap | (string & {});
   attributes: Attribute[];
   children: SvNode[];
 };

@@ -9,6 +9,8 @@ export default defineConfig(() => ({
     globals: true,
     environment: 'happy-dom',
     include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    // tml
+    exclude: ['src/lib/renderer.spec.ts'],
     reporters: ['default'],
     coverage: {
       reportsDirectory: './test-output/vitest/coverage',

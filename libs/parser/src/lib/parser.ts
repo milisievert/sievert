@@ -1,3 +1,4 @@
+import { decode } from './decoder.js';
 import { Attribute, SvNode } from './nodes.js';
 
 function isAlpha(code: number) {
@@ -60,7 +61,7 @@ export function parse(str: string): SvNode[] {
       return;
     }
 
-    const content = buf;
+    const content = decode(buf);
     buf = '';
 
     return { type: 'text', content };
@@ -100,7 +101,7 @@ export function parse(str: string): SvNode[] {
       }
     }
 
-    return { name, value };
+    return { name, value: decode(value) };
   };
 
   const readElement = (): SvNode => {
@@ -160,7 +161,7 @@ export function parse(str: string): SvNode[] {
       children = readNodes(name);
     }
 
-    return { type: 'element', name, attributes, children };
+    return { type: 'element', tagName: name, attributes, children };
   };
 
   const readComment = (): SvNode => {
@@ -188,7 +189,7 @@ export function parse(str: string): SvNode[] {
       );
     }
 
-    return { type: 'comment', content };
+    return { type: 'comment', content: decode(content) };
   };
 
   const closeElement = (tagName: string) => {
