@@ -1,139 +1,200 @@
-import type { Attribute, ElementNode, SvNode, TextNode } from '@sievert/parser';
-import type { Sink } from '@sievert/graph';
-import { read, transformNode } from '@sievert/graph';
-import { getSource, isSignal } from '@sievert/signals';
-import { decode } from './decoder.js';
 import {
-  getCount,
-  Params,
-  replaceAll,
-  replaceAllSignals,
-  shiftMany,
-  shiftUnsafe,
-} from './params.js';
+  type Sink,
+  read,
+  sinkNode,
+  Source,
+  transformNode,
+} from '@sievert/graph';
+import {
+  Attribute,
+  CommentNode,
+  ElementNode,
+  SvNode,
+  TextNode,
+} from '@sievert/parser';
+import { getSource, isSignal } from '@sievert/signals';
+import { activate, EventListenerRef } from './event-listener.js';
 
-type RenderOptions = {
-  tokens: SvNode[];
-  params: Params;
-};
-
-export type RenderResult = {
+type RenderResult = {
   documentFragment: DocumentFragment;
   sinks: Sink[];
+  eventListeners: EventListenerRef[];
 };
 
-/*
- * TODO: ref. chatgpt:Improving template reactivity
- * - generate generic updater functions rather than actual subscibers
- * - this makes the compiled template+updaters cachable
- * - the template should be cloned, and the updaters should be used for constructing the actual subscribers, per instance
- */
-// (TODO: handle unexpected params like out of place conditionals)
-export function render({ tokens, params }: RenderOptions): RenderResult {
+const tagNameBlackList = [
+  'html',
+  'head',
+  'body',
+  'script',
+  'noscript',
+  'style', // TODO: style handling
+];
+
+export function render(
+  nodes: SvNode[],
+  keys: string[] = [],
+  expressions: unknown[] = [],
+) {
   const result: RenderResult = {
     documentFragment: document.createDocumentFragment(),
     sinks: [],
+    eventListeners: [],
   };
 
-  for (const token of tokens) {
-    if (token.type === 'element') {
-      result.documentFragment.appendChild(
-        parseElement(token, params, result.sinks),
-      );
+  let expressionIndex = 0;
+
+  const hasNextExpression = () => expressionIndex < expressions.length;
+  const peekKey = () => keys[expressionIndex];
+  const nextExpression = () => expressions[expressionIndex++];
+
+  const bindAttribute = (element: HTMLElement, attr: Attribute) => {
+    const expression = nextExpression();
+
+    if (typeof expression !== 'function') {
+      element.setAttribute(attr.name, expression as string);
+      return;
     }
-    if (token.type === 'text') {
-      result.documentFragment.appendChild(
-        parseText(token, params, result.sinks),
-      );
-    }
-  }
 
-  return result;
-}
+    const sourceNode = isSignal(expression)
+      ? getSource(expression)
+      : transformNode(expression as () => unknown);
 
-function parseElement(
-  token: ElementNode,
-  params: Params,
-  sinks: Sink[],
-): Element {
-  const element = document.createElement(token.name);
+    result.sinks.push(
+      sinkNode(() =>
+        element.setAttribute(attr.name, read(sourceNode) as string),
+      ),
+    );
+  };
 
-  // TODO: should extract separate method for attribute processing
-  for (const attr of token.attributes) {
-    if (isEventListener(attr, params)) {
-      const { expression } = shiftUnsafe(params);
-      element.addEventListener(attr.name.substring(2), expression);
-    } else {
-      if (attr.value === params.keys[0]) {
-        // handle token containing params
-        const { expression } = shiftUnsafe(params);
+  const bindText = (text: Text, node: TextNode) => {
+    let staticContent = node.content;
 
-        // handle all functions as reactive reads
-        if (typeof expression === 'function') {
-          const source = isSignal(expression)
-            ? getSource(expression)
-            : transformNode(expression);
+    const dynamicExpressions: [string, Source][] = [];
+    const staticExpressions: [string, unknown][] = [];
 
-          sinks.push({
-            fn: () => {
-              element.setAttribute(attr.name, read(source) as string);
-            },
-            sources: [],
-          });
-        } else {
-          // handle all non-functions as static values
-          element.setAttribute(attr.name, expression);
-        }
+    while (staticContent.includes(peekKey())) {
+      const key = peekKey();
+      const expression = nextExpression();
+
+      if (typeof expression === 'function') {
+        const sourceNode = isSignal(expression)
+          ? getSource(expression)
+          : transformNode(expression as () => unknown);
+
+        dynamicExpressions.push([key, sourceNode]);
       } else {
-        // handle token not containing params
-        element.setAttribute(attr.name, attr.value);
+        staticExpressions.push([key, expression]);
       }
     }
-  }
 
-  for (const child of token.children) {
-    if (child.type === 'element') {
-      element.appendChild(parseElement(child, params, sinks));
+    for (const [key, expression] of staticExpressions) {
+      staticContent = staticContent.replace(key, String(expression));
     }
-    if (child.type === 'text') {
-      element.appendChild(parseText(child, params, sinks));
+
+    if (dynamicExpressions.length === 0) {
+      text.textContent = staticContent;
+      return;
     }
-  }
 
-  return element;
-}
+    result.sinks.push(
+      sinkNode(() => {
+        let dynamicContent = staticContent;
 
-// TODO: handle all functions as reactive reads
-function parseText(token: TextNode, params: Params, sinks: Sink[]): Text {
-  const text = document.createTextNode('');
-  const content = decode(token.content);
+        for (const [key, source] of dynamicExpressions) {
+          dynamicContent = dynamicContent.replace(key, String(read(source)));
+        }
 
-  const takeCount = getCount(params, content);
-  const take = shiftMany(params, takeCount);
+        text.textContent = dynamicContent;
+      }),
+    );
+  };
 
-  /*
-   * TODO: need to rethink this part, need to find a scalable and less error prone solution
-   * - could split text token based on expressions. Eg. token could contain some text, a contitional, and a signal
-   */
-  // if (take.expressions.some(isConditional)) {
-  // }
+  const bindEventListener = (element: HTMLElement, attr: Attribute) => {
+    const handler = nextExpression();
 
-  if (take.expressions.some(isSignal)) {
-    sinks.push({
-      fn: () => (text.textContent = replaceAllSignals(take, content)),
-      sources: [],
-    });
-  } else {
-    text.textContent = replaceAll(take, content);
-  }
+    if (typeof handler !== 'function') {
+      throw new Error(
+        `Unexpected value "${handler}" for eventlistener "${attr.name}" on element "${element.tagName.toLowerCase()}"`,
+      );
+    }
 
-  return text;
-}
+    const ref: EventListenerRef = {
+      element,
+      name: attr.name.slice(2),
+      fn: handler as EventListener,
+    };
 
-function isEventListener(token: Attribute, params: Params) {
-  return (
-    token.name.startsWith('on') &&
-    token.value === params.keys[0] &&
-    typeof params.expressions[0] === 'function'
-  );
+    result.eventListeners.push(ref);
+    activate(ref);
+  };
+
+  const renderText = (node: TextNode) => {
+    const text = document.createTextNode('');
+
+    if (hasNextExpression() && node.content.includes(peekKey())) {
+      bindText(text, node);
+    } else {
+      text.textContent = node.content;
+    }
+
+    return text;
+  };
+
+  const renderComment = (node: CommentNode) => {
+    if (node.content.includes(peekKey())) {
+      throw new Error(
+        `Unexpected expression with value "${nextExpression()}" in comment`,
+      );
+    }
+    return document.createComment(node.content);
+  };
+
+  const renderElement = (node: ElementNode) => {
+    const element = document.createElement(node.tagName);
+
+    for (const attr of node.attributes) {
+      const nextKey = peekKey();
+
+      if (!hasNextExpression() || !attr.value.includes(nextKey)) {
+        element.setAttribute(attr.name, attr.value);
+        continue;
+      }
+
+      if (attr.value !== nextKey) {
+        throw new Error(
+          `Unexpected expression with value "${nextExpression()}" in attribute "${attr.name}" for element ${node.tagName}`,
+        );
+      }
+
+      if (attr.name.startsWith('on')) {
+        bindEventListener(element, attr);
+      } else {
+        bindAttribute(element, attr);
+      }
+    }
+
+    renderNodes(element, node.children);
+
+    return element;
+  };
+
+  const renderNodes = (parent: Node, children: SvNode[]) => {
+    for (const child of children) {
+      if (child.type === 'element') {
+        if (tagNameBlackList.includes(child.tagName)) {
+          console.warn(`Banned tag name "${child.tagName}" skipped`);
+          continue;
+        }
+        parent.appendChild(renderElement(child));
+      } else if (child.type === 'text') {
+        parent.appendChild(renderText(child));
+      } else if (child.type === 'comment') {
+        parent.appendChild(renderComment(child));
+      }
+    }
+  };
+
+  renderNodes(result.documentFragment, nodes);
+
+  return result;
 }

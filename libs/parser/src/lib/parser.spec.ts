@@ -4,33 +4,33 @@ import { SvNode } from './nodes.js';
 describe('parser', () => {
   describe('elements', () => {
     it('should parse element', () => {
-      const tokens = parse('<test></test>');
+      const nodes = parse('<test></test>');
 
-      expect(tokens).toEqual<SvNode[]>([
-        { type: 'element', name: 'test', attributes: [], children: [] },
+      expect(nodes).toEqual<SvNode[]>([
+        { type: 'element', tagName: 'test', attributes: [], children: [] },
       ]);
     });
 
     it('should parse nested elements', () => {
-      const tokens = parse('<test><test></test></test>');
+      const nodes = parse('<test><test></test></test>');
 
-      expect(tokens).toEqual<SvNode[]>([
+      expect(nodes).toEqual<SvNode[]>([
         {
           type: 'element',
-          name: 'test',
+          tagName: 'test',
           attributes: [],
           children: [
-            { type: 'element', name: 'test', attributes: [], children: [] },
+            { type: 'element', tagName: 'test', attributes: [], children: [] },
           ],
         },
       ]);
     });
 
     it('should parse void element', () => {
-      const tokens = parse('<test />');
+      const nodes = parse('<test />');
 
-      expect(tokens).toEqual<SvNode[]>([
-        { type: 'element', name: 'test', attributes: [], children: [] },
+      expect(nodes).toEqual<SvNode[]>([
+        { type: 'element', tagName: 'test', attributes: [], children: [] },
       ]);
     });
 
@@ -41,28 +41,28 @@ describe('parser', () => {
     });
 
     it('should not parse elements following void elements as children', () => {
-      const tokens = parse('<test/><test></test>');
+      const nodes = parse('<test/><test></test>');
 
-      expect(tokens).toEqual<SvNode[]>([
-        { type: 'element', name: 'test', attributes: [], children: [] },
-        { type: 'element', name: 'test', attributes: [], children: [] },
+      expect(nodes).toEqual<SvNode[]>([
+        { type: 'element', tagName: 'test', attributes: [], children: [] },
+        { type: 'element', tagName: 'test', attributes: [], children: [] },
       ]);
     });
 
     it('should not parse text following void elements as children', () => {
-      const tokens = parse('<test/>test');
+      const nodes = parse('<test/>test');
 
-      expect(tokens).toEqual<SvNode[]>([
-        { type: 'element', name: 'test', attributes: [], children: [] },
+      expect(nodes).toEqual<SvNode[]>([
+        { type: 'element', tagName: 'test', attributes: [], children: [] },
         { type: 'text', content: 'test' },
       ]);
     });
 
     it('should parse names with letters, numbers and hyphens', () => {
-      const tokens = parse('<test-123></test-123>');
+      const nodes = parse('<test-123></test-123>');
 
-      expect(tokens).toEqual<SvNode[]>([
-        { type: 'element', name: 'test-123', attributes: [], children: [] },
+      expect(nodes).toEqual<SvNode[]>([
+        { type: 'element', tagName: 'test-123', attributes: [], children: [] },
       ]);
     });
 
@@ -93,12 +93,12 @@ describe('parser', () => {
 
   describe('attributes', () => {
     it('should parse bool attribute', () => {
-      const tokens = parse('<test test></test>');
+      const nodes = parse('<test test></test>');
 
-      expect(tokens).toEqual<SvNode[]>([
+      expect(nodes).toEqual<SvNode[]>([
         {
           type: 'element',
-          name: 'test',
+          tagName: 'test',
           attributes: [{ name: 'test', value: '' }],
           children: [],
         },
@@ -106,14 +106,14 @@ describe('parser', () => {
     });
 
     it('should parse quoted and unquoted attributes', () => {
-      const tokens = parse(
+      const nodes = parse(
         '<test double="value" single=\'value\' none=value></test>',
       );
 
-      expect(tokens).toEqual<SvNode[]>([
+      expect(nodes).toEqual<SvNode[]>([
         {
           type: 'element',
-          name: 'test',
+          tagName: 'test',
           attributes: [
             { name: 'double', value: 'value' },
             { name: 'single', value: 'value' },
@@ -135,13 +135,26 @@ describe('parser', () => {
         'Unterminated attribute with name "test" at position 16',
       );
     });
+
+    it('should decode values', () => {
+      const nodes = parse('<test test="Tom &amp; Jerry"></test>');
+
+      expect(nodes).toEqual<SvNode[]>([
+        {
+          type: 'element',
+          tagName: 'test',
+          attributes: [{ name: 'test', value: 'Tom & Jerry' }],
+          children: [],
+        },
+      ]);
+    });
   });
 
   describe('comments', () => {
     it('should parse comments', () => {
-      const tokens = parse('<!--test-->');
+      const nodes = parse('<!--test-->');
 
-      expect(tokens).toEqual<SvNode[]>([
+      expect(nodes).toEqual<SvNode[]>([
         {
           type: 'comment',
           content: 'test',
@@ -160,31 +173,42 @@ describe('parser', () => {
         'Unexpected terminator for comment at position 8',
       );
     });
+
+    it('should decode content', () => {
+      const nodes = parse('<!--Ben &amp; Jerry&#39;s-->');
+
+      expect(nodes).toEqual<SvNode[]>([
+        {
+          type: 'comment',
+          content: "Ben & Jerry's",
+        },
+      ]);
+    });
   });
 
   describe('text', () => {
     it('should parse text', () => {
-      const tokens = parse('test');
+      const nodes = parse('test');
 
-      expect(tokens).toEqual<SvNode[]>([{ type: 'text', content: 'test' }]);
+      expect(nodes).toEqual<SvNode[]>([{ type: 'text', content: 'test' }]);
     });
 
     it('should flush text buffer before element', () => {
-      const tokens = parse('test<test></test>');
+      const nodes = parse('test<test></test>');
 
-      expect(tokens).toEqual<SvNode[]>([
+      expect(nodes).toEqual<SvNode[]>([
         { type: 'text', content: 'test' },
-        { type: 'element', name: 'test', attributes: [], children: [] },
+        { type: 'element', tagName: 'test', attributes: [], children: [] },
       ]);
     });
 
     it('should flush text buffer before closing element', () => {
-      const tokens = parse('<test>test</test>');
+      const nodes = parse('<test>test</test>');
 
-      expect(tokens).toEqual<SvNode[]>([
+      expect(nodes).toEqual<SvNode[]>([
         {
           type: 'element',
-          name: 'test',
+          tagName: 'test',
           attributes: [],
           children: [{ type: 'text', content: 'test' }],
         },
@@ -192,17 +216,25 @@ describe('parser', () => {
     });
 
     it('should flush text buffer before comment', () => {
-      const tokens = parse('test<!--test-->');
+      const nodes = parse('test<!--test-->');
 
-      expect(tokens).toEqual<SvNode[]>([
+      expect(nodes).toEqual<SvNode[]>([
         { type: 'text', content: 'test' },
         { type: 'comment', content: 'test' },
+      ]);
+    });
+
+    it('should decode content', () => {
+      const nodes = parse('Benson &amp; Hedges');
+
+      expect(nodes).toEqual<SvNode[]>([
+        { type: 'text', content: 'Benson & Hedges' },
       ]);
     });
   });
 
   it('should parse mixed content', () => {
-    const tokens = parse(`
+    const nodes = parse(`
       <div id="test">
         <a href="#">Link</a>
         Hello
@@ -212,14 +244,14 @@ describe('parser', () => {
       </div>
     `);
 
-    expect(tokens).toEqual<SvNode[]>([
+    expect(nodes).toEqual<SvNode[]>([
       {
         type: 'text',
         content: '\n      ',
       },
       {
         type: 'element',
-        name: 'div',
+        tagName: 'div',
         attributes: [{ name: 'id', value: 'test' }],
         children: [
           {
@@ -228,7 +260,7 @@ describe('parser', () => {
           },
           {
             type: 'element',
-            name: 'a',
+            tagName: 'a',
             attributes: [{ name: 'href', value: '#' }],
             children: [{ type: 'text', content: 'Link' }],
           },
@@ -238,7 +270,7 @@ describe('parser', () => {
           },
           {
             type: 'element',
-            name: 'span',
+            tagName: 'span',
             attributes: [],
             children: [{ type: 'text', content: 'World' }],
           },
@@ -248,7 +280,7 @@ describe('parser', () => {
           },
           {
             type: 'element',
-            name: 'img',
+            tagName: 'img',
             attributes: [
               { name: 'alt', value: 'test' },
               { name: 'src', value: 'test' },
