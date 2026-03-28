@@ -5,9 +5,14 @@ import {
   Source,
   transformNode,
 } from '@sievert/graph';
-import { Attribute, ElementNode, SvNode, TextNode } from '@sievert/parser';
+import {
+  Attribute,
+  CommentNode,
+  ElementNode,
+  SvNode,
+  TextNode,
+} from '@sievert/parser';
 import { getSource, isSignal } from '@sievert/signals';
-import { CommentNode } from 'node_modules/@sievert/parser/src/lib/nodes.js';
 import { activate, EventListenerRef } from './event-listener.js';
 
 type RenderResult = {

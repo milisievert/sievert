@@ -1,6 +1,5 @@
-import { Attribute, ElementNode } from '@sievert/parser';
+import { Attribute, CommentNode, ElementNode } from '@sievert/parser';
 import { render } from './renderer.js';
-import { CommentNode } from 'libs/parser/src/lib/nodes.js';
 
 describe('renderer', () => {
   describe('elements', () => {
@@ -87,7 +86,7 @@ describe('renderer', () => {
           },
         ],
         ['key'],
-        [() => {}],
+        [vi.fn()],
       );
 
       expect(eventListeners.length).toBe(1);
@@ -223,7 +222,7 @@ describe('renderer', () => {
           },
         ],
         ['key'],
-        [() => {}],
+        [vi.fn()],
       );
 
       expect(sinks.length).toBe(0);
