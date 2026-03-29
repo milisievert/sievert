@@ -11,6 +11,7 @@ export default [
       '**/out-tsc',
       '**/vitest.config.*.timestamp*',
       '**/vite.config.*.timestamp*',
+      '**/test-output',
     ],
   },
   {

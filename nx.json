@@ -54,6 +54,12 @@
       "options": {
         "targetName": "lint"
       }
+    },
+    {
+      "plugin": "@nx/playwright/plugin",
+      "options": {
+        "targetName": "e2e"
+      }
     }
   ],
   "targetDefaults": {
@@ -73,5 +79,13 @@
       "preVersionCommand": "pnpm dlx nx run-many -t build"
     }
   },
-  "analytics": false
+  "analytics": false,
+  "generators": {
+    "@nx/web:application": {
+      "style": "css",
+      "linter": "eslint",
+      "unitTestRunner": "none",
+      "e2eTestRunner": "playwright"
+    }
+  }
 }

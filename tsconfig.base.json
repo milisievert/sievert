@@ -23,7 +23,8 @@
       "@sievertjs/core": ["packages/core/src/index.ts"],
       "@sievert/parser": ["libs/parser/src/index.ts"],
       "@sievert/graph": ["libs/graph/src/index.ts"],
-      "@sievert/signals": ["libs/signals/src/index.ts"]
+      "@sievert/signals": ["libs/signals/src/index.ts"],
+      "@sievert/renderer": ["libs/renderer/src/index.ts"]
     }
   }
 }
