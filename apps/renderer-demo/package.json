@@ -1,8 +1,5 @@
 {
   "name": "@sievert/renderer-demo",
   "version": "0.0.1",
-  "private": true,
-  "dependencies": {
-    "@sievertjs/core": "workspace:*"
-  }
+  "private": true
 }

@@ -1,4 +1,5 @@
-import { html, signal } from "@sievertjs/core";
+import { html } from '@sievert/renderer';
+import { signal } from '@sievert/signals';
 
 const root = document.querySelector<HTMLDivElement>('#app')!;
 

@@ -142,6 +142,19 @@ describe('renderer', () => {
       expect(documentFragment.children[0].getAttribute('test')).toBe('test');
     });
 
+    it('should throw on expressions in attribute name', () => {
+      const el: ElementNode = {
+        type: 'element',
+        tagName: 'div',
+        attributes: [{ name: 'key', value: 'test' }],
+        children: []
+      };
+
+      expect(() => render([el], ['key'], ['value'])).toThrow(
+        'Unexpected expression with value "value" in attribute name for element "div"'
+      );
+    })
+
     it('should bind full expression match', () => {
       const { documentFragment } = render(
         [
@@ -173,7 +186,7 @@ describe('renderer', () => {
       };
 
       expect(() => render([el], ['key'], ['value'])).toThrow(
-        `Unexpected expression with value "value" in attribute "${attr.name}" for element ${el.tagName}`,
+        `Unexpected expression with value "value" in attribute "${attr.name}" for element "${el.tagName}"`,
       );
     });
 
