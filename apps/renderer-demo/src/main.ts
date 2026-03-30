@@ -7,8 +7,7 @@ const count = signal(0);
 
 const { documentFragment } = html`
   <div>Hello, World!</div>
-  <!-- TODO: throw on expressions in attribute names -->
-  <button onclick${() => count.update(x => x + 1)}>
+  <button onclick=${() => count.update(x => x + 1)}>
     Clicked: ${count}
   </button>
 `;

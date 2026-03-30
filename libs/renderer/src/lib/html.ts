@@ -1,7 +1,7 @@
+import { enqueue, tick } from '@sievert/graph';
 import { parse } from '@sievert/parser';
 import { render } from './renderer.js';
 import { randomBase36 } from './random.js';
-import { enqueue, tick } from '@sievert/graph';
 
 function generateKeys(count: number) {
   const keys = new Array<string>(count);
@@ -23,7 +23,7 @@ export function html(
 
   const result = render(nodes, keys, expressions);
 
-  // TODO
+  // TODO: render context
   result.sinks.forEach(enqueue);
   tick();
 
