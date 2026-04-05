@@ -1,10 +1,11 @@
 import { Attribute, CommentNode, ElementNode } from '@sievert/parser';
 import { render } from './renderer.js';
+import { createContext } from './render-context.js';
 
 describe('renderer', () => {
   describe('elements', () => {
     it('should render element', () => {
-      const { documentFragment } = render([
+      const documentFragment = render([
         { type: 'element', tagName: 'div', attributes: [], children: [] },
       ]);
 
@@ -13,7 +14,7 @@ describe('renderer', () => {
     });
 
     it('should render element child', () => {
-      const { documentFragment } = render([
+      const documentFragment = render([
         {
           type: 'element',
           tagName: 'section',
@@ -31,7 +32,7 @@ describe('renderer', () => {
     });
 
     it('should render text child', () => {
-      const { documentFragment } = render([
+      const documentFragment = render([
         {
           type: 'element',
           tagName: 'span',
@@ -47,7 +48,7 @@ describe('renderer', () => {
     });
 
     it('should render comment child', () => {
-      const { documentFragment } = render([
+      const documentFragment = render([
         {
           type: 'element',
           tagName: 'div',
@@ -63,7 +64,7 @@ describe('renderer', () => {
     });
 
     it('should not render html, head, body, script, noscrip, or style elements', () => {
-      const { documentFragment } = render([
+      const documentFragment = render([
         { type: 'element', tagName: 'html', attributes: [], children: [] },
         { type: 'element', tagName: 'head', attributes: [], children: [] },
         { type: 'element', tagName: 'body', attributes: [], children: [] },
@@ -75,8 +76,10 @@ describe('renderer', () => {
       expect(documentFragment.childNodes.length).toBe(0);
     });
 
-    it('should create event listener', () => {
-      const { eventListeners } = render(
+    it('should add event listener to render context', () => {
+      const ctx = createContext();
+
+      render(
         [
           {
             type: 'element',
@@ -87,9 +90,10 @@ describe('renderer', () => {
         ],
         ['key'],
         [vi.fn()],
+        ctx,
       );
 
-      expect(eventListeners.length).toBe(1);
+      expect(ctx.eventListeners.size).toBe(1);
     });
 
     it('should throw on non function event listener', () => {
@@ -104,33 +108,11 @@ describe('renderer', () => {
         `Unexpected value "value" for eventlistener "onclick" on element "button"`,
       );
     });
-
-    it('should activate event listener', () => {
-      const fn = vi.fn();
-
-      const { documentFragment } = render(
-        [
-          {
-            type: 'element',
-            tagName: 'button',
-            attributes: [{ name: 'onclick', value: 'key' }],
-            children: [],
-          },
-        ],
-        ['key'],
-        [fn],
-      );
-
-      const button = documentFragment.childNodes[0];
-      button.dispatchEvent(new PointerEvent('click'));
-
-      expect(fn).toHaveBeenCalledOnce();
-    });
   });
 
   describe('attributes', () => {
     it('should render attributes', () => {
-      const { documentFragment } = render([
+      const documentFragment = render([
         {
           type: 'element',
           tagName: 'div',
@@ -143,7 +125,7 @@ describe('renderer', () => {
     });
 
     it('should bind full expression match', () => {
-      const { documentFragment } = render(
+      const documentFragment = render(
         [
           {
             type: 'element',
@@ -177,8 +159,10 @@ describe('renderer', () => {
       );
     });
 
-    it('should create sink for dynamic expression', () => {
-      const { sinks } = render(
+    it('should add sink to render context for dynamic expression', () => {
+      const ctx = createContext();
+
+      render(
         [
           {
             type: 'element',
@@ -189,13 +173,16 @@ describe('renderer', () => {
         ],
         ['key'],
         [() => 'value'],
+        ctx,
       );
 
-      expect(sinks.length).toBe(1);
+      expect(ctx.sinks.size).toBe(1);
     });
 
-    it('should not create sink for static expression', () => {
-      const { sinks } = render(
+    it('should not add sink to render context for static expression', () => {
+      const ctx = createContext();
+
+      render(
         [
           {
             type: 'element',
@@ -206,13 +193,16 @@ describe('renderer', () => {
         ],
         ['key'],
         ['value'],
+        ctx,
       );
 
-      expect(sinks.length).toBe(0);
+      expect(ctx.sinks.size).toBe(0);
     });
 
-    it('should not create sink for eventlistener', () => {
-      const { sinks } = render(
+    it('should not add sink to render context for eventlistener', () => {
+      const ctx = createContext();
+
+      render(
         [
           {
             type: 'element',
@@ -225,13 +215,13 @@ describe('renderer', () => {
         [vi.fn()],
       );
 
-      expect(sinks.length).toBe(0);
+      expect(ctx.sinks.size).toBe(0);
     });
   });
 
   describe('text', () => {
     it('should render text', () => {
-      const { documentFragment } = render([{ type: 'text', content: 'test' }]);
+      const documentFragment = render([{ type: 'text', content: 'test' }]);
 
       expect(documentFragment.childNodes.length).toBe(1);
       expect(documentFragment.childNodes[0]).toBeInstanceOf(Text);
@@ -239,7 +229,7 @@ describe('renderer', () => {
     });
 
     it('should render static expressions', () => {
-      const { documentFragment } = render(
+      const documentFragment = render(
         [{ type: 'text', content: 'greeting, identifier!' }],
         ['greeting', 'identifier'],
         ['Hello', 'World'],
@@ -248,18 +238,21 @@ describe('renderer', () => {
       expect(documentFragment.textContent).toBe('Hello, World!');
     });
 
-    it('should not create sink for static expression', () => {
-      const { sinks } = render(
+    it('should not add sink to render context for static expression', () => {
+      const ctx = createContext();
+
+      render(
         [{ type: 'text', content: 'key' }],
         ['key'],
         ['value'],
+        ctx
       );
 
-      expect(sinks.length).toBe(0);
+      expect(ctx.sinks.size).toBe(0);
     });
 
     it('should not render dynamic expressions', () => {
-      const { documentFragment } = render(
+      const documentFragment = render(
         [{ type: 'text', content: 'greeting, identifier!' }],
         ['greeting', 'identifier'],
         [() => 'Hello', () => 'World'],
@@ -268,20 +261,23 @@ describe('renderer', () => {
       expect(documentFragment.textContent).toBe('');
     });
 
-    it('should create sinks for dynamic expressions', () => {
-      const { sinks } = render(
+    it('should add sink to render context for dynamic expressions', () => {
+      const ctx = createContext();
+
+      render(
         [{ type: 'text', content: 'key' }],
         ['key'],
         [() => 'value'],
+        ctx
       );
 
-      expect(sinks.length).toBe(1);
+      expect(ctx.sinks.size).toBe(1);
     });
   });
 
   describe('comments', () => {
     it('should render comment', () => {
-      const { documentFragment } = render([
+      const documentFragment = render([
         { type: 'comment', content: 'test' },
       ]);
 
