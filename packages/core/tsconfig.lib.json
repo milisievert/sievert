@@ -16,6 +16,6 @@
     },
     {
       "path": "../../libs/renderer/tsconfig.lib.json"
-    },
+    }
   ]
 }

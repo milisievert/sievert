@@ -147,13 +147,13 @@ describe('renderer', () => {
         type: 'element',
         tagName: 'div',
         attributes: [{ name: 'key', value: 'test' }],
-        children: []
+        children: [],
       };
 
       expect(() => render([el], ['key'], ['value'])).toThrow(
-        'Unexpected expression with value "value" in attribute name for element "div"'
+        'Unexpected expression with value "value" in attribute name for element "div"',
       );
-    })
+    });
 
     it('should bind full expression match', () => {
       const { documentFragment } = render(

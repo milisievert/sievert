@@ -155,8 +155,8 @@ export function render(
     for (const attr of node.attributes) {
       if (hasNextExpression() && attr.name.includes(peekKey())) {
         throw new Error(
-          `Unexpected expression with value "${nextExpression()}" in attribute name for element "${node.tagName}"`
-        )
+          `Unexpected expression with value "${nextExpression()}" in attribute name for element "${node.tagName}"`,
+        );
       }
 
       if (!hasNextExpression() || !attr.value.includes(peekKey())) {

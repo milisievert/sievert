@@ -7,9 +7,7 @@ const count = signal(0);
 
 const { documentFragment } = html`
   <div>Hello, World!</div>
-  <button onclick=${() => count.update(x => x + 1)}>
-    Clicked: ${count}
-  </button>
+  <button onclick=${() => count.update((x) => x + 1)}>Clicked: ${count}</button>
 `;
 
 root.appendChild(documentFragment);
