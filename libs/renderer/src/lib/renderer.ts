@@ -135,16 +135,20 @@ export function render(
     const element = document.createElement(node.tagName);
 
     for (const attr of node.attributes) {
-      const nextKey = peekKey();
+      if (hasNextExpression() && attr.name.includes(peekKey())) {
+        throw new Error(
+          `Unexpected expression with value "${nextExpression()}" in attribute name for element "${node.tagName}"`,
+        );
+      }
 
-      if (!hasNextExpression() || !attr.value.includes(nextKey)) {
+      if (!hasNextExpression() || !attr.value.includes(peekKey())) {
         element.setAttribute(attr.name, attr.value);
         continue;
       }
 
-      if (attr.value !== nextKey) {
+      if (attr.value !== peekKey()) {
         throw new Error(
-          `Unexpected expression with value "${nextExpression()}" in attribute "${attr.name}" for element ${node.tagName}`,
+          `Unexpected expression with value "${nextExpression()}" in attribute "${attr.name}" for element "${node.tagName}"`,
         );
       }
 

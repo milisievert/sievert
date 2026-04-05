@@ -1,0 +1,8 @@
+{
+  "name": "@sievert/renderer-demo",
+  "version": "0.0.1",
+  "private": true,
+  "nx": {
+    "tags": ["scope:core"]
+  }
+}
