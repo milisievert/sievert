@@ -13,6 +13,9 @@
   "references": [
     {
       "path": "../../libs/signals/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/renderer/tsconfig.lib.json"
     }
   ]
 }
