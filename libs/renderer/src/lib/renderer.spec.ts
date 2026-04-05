@@ -241,12 +241,7 @@ describe('renderer', () => {
     it('should not add sink to render context for static expression', () => {
       const ctx = createContext();
 
-      render(
-        [{ type: 'text', content: 'key' }],
-        ['key'],
-        ['value'],
-        ctx
-      );
+      render([{ type: 'text', content: 'key' }], ['key'], ['value'], ctx);
 
       expect(ctx.sinks.size).toBe(0);
     });
@@ -264,12 +259,7 @@ describe('renderer', () => {
     it('should add sink to render context for dynamic expressions', () => {
       const ctx = createContext();
 
-      render(
-        [{ type: 'text', content: 'key' }],
-        ['key'],
-        [() => 'value'],
-        ctx
-      );
+      render([{ type: 'text', content: 'key' }], ['key'], [() => 'value'], ctx);
 
       expect(ctx.sinks.size).toBe(1);
     });
@@ -277,9 +267,7 @@ describe('renderer', () => {
 
   describe('comments', () => {
     it('should render comment', () => {
-      const documentFragment = render([
-        { type: 'comment', content: 'test' },
-      ]);
+      const documentFragment = render([{ type: 'comment', content: 'test' }]);
 
       expect(documentFragment.childNodes.length).toBe(1);
       expect(documentFragment.childNodes[0]).toBeInstanceOf(Comment);
