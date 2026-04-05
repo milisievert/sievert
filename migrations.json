@@ -1,0 +1,11 @@
+{
+  "migrations": [],
+  "nx-console": {
+    "initialGitRef": {
+      "ref": "4a5591c18b5cf587fd33aaf110de046b0f348c76",
+      "subject": "feat(renderer): add render context (#31)"
+    },
+    "targetVersion": "latest",
+    "confirmedPackageUpdates": true
+  }
+}
