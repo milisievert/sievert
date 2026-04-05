@@ -1,11 +1,5 @@
-import {
-  type Sink,
-  read,
-  sinkNode,
-  Source,
-  transformNode,
-} from '@sievert/graph';
-import {
+import { read, sinkNode, Source, transformNode } from '@sievert/graph';
+import type {
   Attribute,
   CommentNode,
   ElementNode,
@@ -13,13 +7,7 @@ import {
   TextNode,
 } from '@sievert/parser';
 import { getSource, isSignal } from '@sievert/signals';
-import { activate, EventListenerRef } from './event-listener.js';
-
-type RenderResult = {
-  documentFragment: DocumentFragment;
-  sinks: Sink[];
-  eventListeners: EventListenerRef[];
-};
+import { createContext, type RenderContext } from './render-context.js';
 
 const tagNameBlackList = [
   'html',
@@ -34,12 +22,9 @@ export function render(
   nodes: SvNode[],
   keys: string[] = [],
   expressions: unknown[] = [],
+  context: RenderContext = createContext(),
 ) {
-  const result: RenderResult = {
-    documentFragment: document.createDocumentFragment(),
-    sinks: [],
-    eventListeners: [],
-  };
+  const documentFragment = document.createDocumentFragment();
 
   let expressionIndex = 0;
 
@@ -59,7 +44,7 @@ export function render(
       ? getSource(expression)
       : transformNode(expression as () => unknown);
 
-    result.sinks.push(
+    context.sinks.add(
       sinkNode(() =>
         element.setAttribute(attr.name, read(sourceNode) as string),
       ),
@@ -96,7 +81,7 @@ export function render(
       return;
     }
 
-    result.sinks.push(
+    context.sinks.add(
       sinkNode(() => {
         let dynamicContent = staticContent;
 
@@ -118,14 +103,11 @@ export function render(
       );
     }
 
-    const ref: EventListenerRef = {
+    context.eventListeners.add({
       element,
       name: attr.name.slice(2),
       fn: handler as EventListener,
-    };
-
-    result.eventListeners.push(ref);
-    activate(ref);
+    });
   };
 
   const renderText = (node: TextNode) => {
@@ -198,7 +180,7 @@ export function render(
     }
   };
 
-  renderNodes(result.documentFragment, nodes);
+  renderNodes(documentFragment, nodes);
 
-  return result;
+  return documentFragment;
 }

@@ -1,7 +1,16 @@
-import { enqueue, tick } from '@sievert/graph';
 import { parse } from '@sievert/parser';
 import { render } from './renderer.js';
 import { randomBase36 } from './random.js';
+import {
+  type RenderContext,
+  createContext,
+  getContext,
+} from './render-context.js';
+
+export type HtmlResult = {
+  documentFragment: DocumentFragment;
+  context: RenderContext;
+};
 
 function generateKeys(count: number) {
   const keys = new Array<string>(count);
@@ -15,17 +24,13 @@ function generateKeys(count: number) {
 
 export function html(
   parts: TemplateStringsArray,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ...expressions: any[]
-) {
+  ...expressions: unknown[]
+): HtmlResult {
+  const context = getContext() ?? createContext();
+
   const keys = generateKeys(expressions.length);
   const nodes = parse(String.raw(parts, ...keys));
+  const documentFragment = render(nodes, keys, expressions, context);
 
-  const result = render(nodes, keys, expressions);
-
-  // TODO: render context
-  result.sinks.forEach(enqueue);
-  tick();
-
-  return result;
+  return { documentFragment, context };
 }
