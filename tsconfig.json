@@ -19,10 +19,10 @@
       "path": "./libs/renderer"
     },
     {
-      "path": "./apps/renderer-demo-e2e"
+      "path": "./apps/demo-app"
     },
     {
-      "path": "./apps/renderer-demo"
+      "path": "./libs/component"
     }
   ]
 }

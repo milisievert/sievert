@@ -22,9 +22,7 @@
     "@sievert/signals": "workspace:*"
   },
   "nx": {
-    "tags": [
-      "scope:core",
-      "type:internal"
-    ]
+    "name": "renderer",
+    "tags": ["scope:core", "type:internal"]
   }
 }

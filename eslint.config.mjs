@@ -1,5 +1,5 @@
 import nx from '@nx/eslint-plugin';
-import { createScopeRules } from './tools/create-scope-rules.mjs';
+import { scopeRule } from './tools/create-scope-rules.mjs';
 
 export default [
   ...nx.configs['flat/base'],
@@ -24,6 +24,10 @@ export default [
           allow: ['^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$'],
           depConstraints: [
             {
+              sourceTag: 'scope:all',
+              onlyDependOnLibsWithTags: ['*'],
+            },
+            {
               sourceTag: 'type:app',
               onlyDependOnLibsWithTags: ['type:api'],
             },
@@ -35,7 +39,7 @@ export default [
               sourceTag: 'type:internal',
               onlyDependOnLibsWithTags: ['type:internal', 'type:api'],
             },
-            ...createScopeRules({
+            ...scopeRule({
               scope: 'core',
               allowedScopes: [],
             }),

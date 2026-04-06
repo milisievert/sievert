@@ -1,5 +1,5 @@
 {
-  "name": "@sievert/parser",
+  "name": "@sivert/component",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -15,11 +15,13 @@
       "default": "./dist/index.js"
     }
   },
-  "dependencies": {
-    "tslib": "^2.3.0"
-  },
   "nx": {
-    "name": "parser",
+    "name": "component",
     "tags": ["scope:core", "type:internal"]
+  },
+  "dependencies": {
+    "tslib": "^2.3.0",
+    "@sievert/renderer": "workspace:*",
+    "@sievert/graph": "workspace:*"
   }
 }

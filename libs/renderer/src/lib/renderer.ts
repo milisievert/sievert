@@ -7,7 +7,7 @@ import type {
   TextNode,
 } from '@sievert/parser';
 import { getSource, isSignal } from '@sievert/signals';
-import { createContext, type RenderContext } from './render-context.js';
+import { type RenderContext } from './render-context.js';
 
 const tagNameBlackList = [
   'html',
@@ -20,9 +20,9 @@ const tagNameBlackList = [
 
 export function render(
   nodes: SvNode[],
-  keys: string[] = [],
-  expressions: unknown[] = [],
-  context: RenderContext = createContext(),
+  keys: string[],
+  expressions: unknown[],
+  context: RenderContext,
 ) {
   const documentFragment = document.createDocumentFragment();
 
