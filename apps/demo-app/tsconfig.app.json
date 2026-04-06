@@ -24,6 +24,9 @@
     },
     {
       "path": "../../libs/renderer/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/component/tsconfig.lib.json"
     }
   ]
 }

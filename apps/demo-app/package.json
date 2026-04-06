@@ -1,0 +1,14 @@
+{
+  "name": "@sievert/demo-app",
+  "version": "0.0.1",
+  "private": true,
+  "nx": {
+    "tags": ["scope:all"],
+    "name": "demo-app",
+    "implicitDependencies": [
+      "component",
+      "renderer",
+      "signals"
+    ]
+  }
+}

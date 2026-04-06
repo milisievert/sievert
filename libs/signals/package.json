@@ -20,6 +20,7 @@
     "@sievert/graph": "workspace:*"
   },
   "nx": {
+    "name": "signals",
     "tags": ["scope:core", "type:internal"]
   }
 }

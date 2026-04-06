@@ -1,4 +1,4 @@
-export function createScopeRules({ scope, allowedScopes }) {
+export function scopeRule({ scope, allowedScopes }) {
   return [
     {
       sourceTag: `scope:${scope}`,

@@ -5,25 +5,33 @@ import { createContext } from './render-context.js';
 describe('renderer', () => {
   describe('elements', () => {
     it('should render element', () => {
-      const documentFragment = render([
-        { type: 'element', tagName: 'div', attributes: [], children: [] },
-      ]);
+      const documentFragment = render(
+        [{ type: 'element', tagName: 'div', attributes: [], children: [] }],
+        [],
+        [],
+        createContext(),
+      );
 
       expect(documentFragment.childNodes.length).toBe(1);
       expect(documentFragment.childNodes[0]).toBeInstanceOf(HTMLDivElement);
     });
 
     it('should render element child', () => {
-      const documentFragment = render([
-        {
-          type: 'element',
-          tagName: 'section',
-          attributes: [],
-          children: [
-            { type: 'element', tagName: 'p', attributes: [], children: [] },
-          ],
-        },
-      ]);
+      const documentFragment = render(
+        [
+          {
+            type: 'element',
+            tagName: 'section',
+            attributes: [],
+            children: [
+              { type: 'element', tagName: 'p', attributes: [], children: [] },
+            ],
+          },
+        ],
+        [],
+        [],
+        createContext(),
+      );
 
       const section = documentFragment.childNodes[0];
 
@@ -32,14 +40,19 @@ describe('renderer', () => {
     });
 
     it('should render text child', () => {
-      const documentFragment = render([
-        {
-          type: 'element',
-          tagName: 'span',
-          attributes: [],
-          children: [{ type: 'text', content: 'test' }],
-        },
-      ]);
+      const documentFragment = render(
+        [
+          {
+            type: 'element',
+            tagName: 'span',
+            attributes: [],
+            children: [{ type: 'text', content: 'test' }],
+          },
+        ],
+        [],
+        [],
+        createContext(),
+      );
 
       const span = documentFragment.childNodes[0];
 
@@ -48,14 +61,19 @@ describe('renderer', () => {
     });
 
     it('should render comment child', () => {
-      const documentFragment = render([
-        {
-          type: 'element',
-          tagName: 'div',
-          attributes: [],
-          children: [{ type: 'comment', content: 'test' }],
-        },
-      ]);
+      const documentFragment = render(
+        [
+          {
+            type: 'element',
+            tagName: 'div',
+            attributes: [],
+            children: [{ type: 'comment', content: 'test' }],
+          },
+        ],
+        [],
+        [],
+        createContext(),
+      );
 
       const div = documentFragment.children[0];
 
@@ -64,14 +82,24 @@ describe('renderer', () => {
     });
 
     it('should not render html, head, body, script, noscrip, or style elements', () => {
-      const documentFragment = render([
-        { type: 'element', tagName: 'html', attributes: [], children: [] },
-        { type: 'element', tagName: 'head', attributes: [], children: [] },
-        { type: 'element', tagName: 'body', attributes: [], children: [] },
-        { type: 'element', tagName: 'script', attributes: [], children: [] },
-        { type: 'element', tagName: 'noscript', attributes: [], children: [] },
-        { type: 'element', tagName: 'style', attributes: [], children: [] },
-      ]);
+      const documentFragment = render(
+        [
+          { type: 'element', tagName: 'html', attributes: [], children: [] },
+          { type: 'element', tagName: 'head', attributes: [], children: [] },
+          { type: 'element', tagName: 'body', attributes: [], children: [] },
+          { type: 'element', tagName: 'script', attributes: [], children: [] },
+          {
+            type: 'element',
+            tagName: 'noscript',
+            attributes: [],
+            children: [],
+          },
+          { type: 'element', tagName: 'style', attributes: [], children: [] },
+        ],
+        [],
+        [],
+        createContext(),
+      );
 
       expect(documentFragment.childNodes.length).toBe(0);
     });
@@ -104,7 +132,9 @@ describe('renderer', () => {
         children: [],
       };
 
-      expect(() => render([button], ['key'], ['value'])).toThrow(
+      expect(() => {
+        render([button], ['key'], ['value'], createContext());
+      }).toThrow(
         `Unexpected value "value" for eventlistener "onclick" on element "button"`,
       );
     });
@@ -112,14 +142,19 @@ describe('renderer', () => {
 
   describe('attributes', () => {
     it('should render attributes', () => {
-      const documentFragment = render([
-        {
-          type: 'element',
-          tagName: 'div',
-          attributes: [{ name: 'test', value: 'test' }],
-          children: [],
-        },
-      ]);
+      const documentFragment = render(
+        [
+          {
+            type: 'element',
+            tagName: 'div',
+            attributes: [{ name: 'test', value: 'test' }],
+            children: [],
+          },
+        ],
+        [],
+        [],
+        createContext(),
+      );
 
       expect(documentFragment.children[0].getAttribute('test')).toBe('test');
     });
@@ -132,7 +167,9 @@ describe('renderer', () => {
         children: [],
       };
 
-      expect(() => render([el], ['key'], ['value'])).toThrow(
+      expect(() => {
+        render([el], ['key'], ['value'], createContext());
+      }).toThrow(
         'Unexpected expression with value "value" in attribute name for element "div"',
       );
     });
@@ -149,6 +186,7 @@ describe('renderer', () => {
         ],
         ['key'],
         ['value'],
+        createContext(),
       );
 
       expect(documentFragment.children[0].getAttribute('test')).toBe('value');
@@ -167,7 +205,9 @@ describe('renderer', () => {
         children: [],
       };
 
-      expect(() => render([el], ['key'], ['value'])).toThrow(
+      expect(() => {
+        render([el], ['key'], ['value'], createContext());
+      }).toThrow(
         `Unexpected expression with value "value" in attribute "${attr.name}" for element "${el.tagName}"`,
       );
     });
@@ -226,6 +266,7 @@ describe('renderer', () => {
         ],
         ['key'],
         [vi.fn()],
+        ctx,
       );
 
       expect(ctx.sinks.size).toBe(0);
@@ -234,7 +275,12 @@ describe('renderer', () => {
 
   describe('text', () => {
     it('should render text', () => {
-      const documentFragment = render([{ type: 'text', content: 'test' }]);
+      const documentFragment = render(
+        [{ type: 'text', content: 'test' }],
+        [],
+        [],
+        createContext(),
+      );
 
       expect(documentFragment.childNodes.length).toBe(1);
       expect(documentFragment.childNodes[0]).toBeInstanceOf(Text);
@@ -246,6 +292,7 @@ describe('renderer', () => {
         [{ type: 'text', content: 'greeting, identifier!' }],
         ['greeting', 'identifier'],
         ['Hello', 'World'],
+        createContext(),
       );
 
       expect(documentFragment.textContent).toBe('Hello, World!');
@@ -264,6 +311,7 @@ describe('renderer', () => {
         [{ type: 'text', content: 'greeting, identifier!' }],
         ['greeting', 'identifier'],
         [() => 'Hello', () => 'World'],
+        createContext(),
       );
 
       expect(documentFragment.textContent).toBe('');
@@ -280,7 +328,12 @@ describe('renderer', () => {
 
   describe('comments', () => {
     it('should render comment', () => {
-      const documentFragment = render([{ type: 'comment', content: 'test' }]);
+      const documentFragment = render(
+        [{ type: 'comment', content: 'test' }],
+        [],
+        [],
+        createContext(),
+      );
 
       expect(documentFragment.childNodes.length).toBe(1);
       expect(documentFragment.childNodes[0]).toBeInstanceOf(Comment);
@@ -293,9 +346,9 @@ describe('renderer', () => {
         content: 'key',
       };
 
-      expect(() => render([comment], ['key'], ['value'])).toThrow(
-        `Unexpected expression with value "value" in comment`,
-      );
+      expect(() => {
+        render([comment], ['key'], ['value'], createContext());
+      }).toThrow(`Unexpected expression with value "value" in comment`);
     });
   });
 });
