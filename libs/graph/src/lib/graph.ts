@@ -41,7 +41,7 @@ export function tick(): boolean {
 
 function reset() {
   currentSink = null;
-  
+
   for (let i = 0; i < nextTick.length; i++) {
     nextTick.pop();
   }
