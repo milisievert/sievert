@@ -1,4 +1,10 @@
-import { read, sinkNode, Source, transformNode } from '@sievert/graph';
+import {
+  beforeTick,
+  read,
+  sinkNode,
+  Source,
+  transformNode,
+} from '@sievert/graph';
 import type {
   Attribute,
   CommentNode,
@@ -106,7 +112,7 @@ export function render(
     context.eventListeners.add({
       element,
       name: attr.name.slice(2),
-      fn: handler as EventListener,
+      fn: async () => await beforeTick(handler as () => unknown),
     });
   };
 
