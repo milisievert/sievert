@@ -1,24 +1,34 @@
 import type { Source, Sink } from './nodes.js';
 import { ERROR, INIT, PROGRESS } from './symbols.js';
 
-let context: Sink | null = null;
-
+let autoTick = true;
+let currentSink: Sink | null = null;
 const nextTick: Sink[] = [];
+
+export async function beforeTick(
+  fn: (() => Promise<unknown>) | (() => unknown),
+) {
+  autoTick = false;
+
+  const result = await fn();
+  tick();
+
+  autoTick = true;
+  return result;
+}
 
 export function tick(): boolean {
   if (nextTick.length === 0) {
     return false;
   }
 
-  // if (context !== null) ?
-
   let sink: Sink | undefined;
 
   while ((sink = nextTick.shift())) {
     detach(sink);
-    context = sink;
+    currentSink = sink;
     sink.fn();
-    context = null;
+    currentSink = null;
   }
 
   return true;
@@ -58,16 +68,17 @@ export function read(source: Source) {
     throw new Error('Graph error');
   }
 
-  if (context !== null) {
-    if (!context.sources.includes(source)) {
-      context.sources.push(source);
-      context.sourceVersions?.push(source.version);
-    } else if (context.sourceVersions) {
-      context.sourceVersions[context.sources.indexOf(source)] = source.version;
+  if (currentSink !== null) {
+    if (!currentSink.sources.includes(source)) {
+      currentSink.sources.push(source);
+      currentSink.sourceVersions?.push(source.version);
+    } else if (currentSink.sourceVersions) {
+      currentSink.sourceVersions[currentSink.sources.indexOf(source)] =
+        source.version;
     }
 
-    if (!source.sinks.includes(context)) {
-      source.sinks.push(context);
+    if (!source.sinks.includes(currentSink)) {
+      source.sinks.push(currentSink);
     }
   }
 
@@ -85,6 +96,10 @@ export function update(source: Source, value: unknown): void {
   if (source.sinks.length > 0) {
     source.sinks.forEach(notifySink);
   }
+
+  if (autoTick) {
+    tick();
+  }
 }
 
 function notifySink(sink: Sink): void {
@@ -92,6 +107,10 @@ function notifySink(sink: Sink): void {
     if (!nextTick.includes(sink)) {
       nextTick.push(sink);
     }
+    return;
+  }
+
+  if (sink.dirty === true) {
     return;
   }
 
@@ -124,15 +143,15 @@ function beforeReadTransform(transform: Sink & Source): void {
 }
 
 function updateTransform(transform: Sink & Source): void {
-  const prev = context;
-  context = transform;
+  const prev = currentSink;
+  currentSink = transform;
 
   transform.value = PROGRESS;
   transform.value = transform.fn();
   transform.dirty = false;
   transform.version++;
 
-  context = prev;
+  currentSink = prev;
 }
 
 function isSource(obj: object): obj is Source {

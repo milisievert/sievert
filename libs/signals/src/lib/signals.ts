@@ -2,7 +2,6 @@ import {
   type Source,
   read,
   sourceNode,
-  tick,
   transformNode,
   update,
 } from '@sievert/graph';
@@ -55,12 +54,12 @@ export function createWritableSignal<T>(value: T) {
     },
     set: {
       value: (value: T) => {
-        updateSignal(node, value);
+        update(node, value);
       },
     },
     update: {
       value: (fn: (value: T) => T) => {
-        updateSignal(node, fn(node.value as T));
+        update(node, fn(node.value as T));
       },
     },
     readonly: {
@@ -69,15 +68,4 @@ export function createWritableSignal<T>(value: T) {
       },
     },
   }) as WritableSignal<T>;
-}
-
-// TODO: in context updates
-function updateSignal(source: Source, value: unknown) {
-  update(source, value);
-
-  // const context = getContext();
-  // if (!context) {
-  tick();
-  return;
-  // }
 }

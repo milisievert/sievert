@@ -5,24 +5,24 @@ describe('signal', () => {
     const sig = signal('test');
     expect(sig()).toBe('test');
   });
-});
 
-describe('signal:set', () => {
-  it('should update value', () => {
-    const sig = signal('test');
+  describe('set', () => {
+    it('should update value', () => {
+      const sig = signal('test');
 
-    sig.set('sievert');
+      sig.set('sievert');
 
-    expect(sig()).toBe('sievert');
+      expect(sig()).toBe('sievert');
+    });
   });
-});
 
-describe('signal:update', () => {
-  it('should update value', () => {
-    const sig = signal('test');
+  describe('update', () => {
+    it('should update value', () => {
+      const sig = signal('test');
 
-    sig.update((value) => value + 'ing');
+      sig.update((value) => value + 'ing');
 
-    expect(sig()).toBe('testing');
+      expect(sig()).toBe('testing');
+    });
   });
 });

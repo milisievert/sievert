@@ -7,13 +7,13 @@ describe('computed', () => {
     expect(com()).toBe('test');
   });
 
-  it('should read sources', () => {
+  it('should read dependencies', () => {
     const sig = signal('test');
     const com = computed(() => sig() + 'ing');
     expect(com()).toBe('testing');
   });
 
-  it('should update when sources update', () => {
+  it('should update when dependencies update', () => {
     const sig = signal(true);
     const com = computed(() => (sig() ? 'test' : 'sievert'));
     expect(com()).toBe('test');
