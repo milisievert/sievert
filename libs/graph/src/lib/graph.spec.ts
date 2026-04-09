@@ -88,6 +88,7 @@ describe('graph', () => {
 
       expect(result).toBe('test');
       expect(transform.value).toBe('test');
+      expect(transform.version).toBe(0);
       expect(spy).toHaveBeenCalledOnce();
     });
 
@@ -209,6 +210,31 @@ describe('graph', () => {
       await beforeTick(() => update(source, 'sievert'));
 
       expect(sinkSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it('should perform bulk updates', async () => {
+      const source1 = sourceNode('test1');
+      const source2 = sourceNode('test2');
+      const transform = transformNode(
+        () => `${read(source1)} ${read(source2)}`,
+      );
+
+      read(transform);
+
+      await beforeTick(() => {
+        update(source1, 'sievert');
+        update(source2, 'sievert');
+      });
+
+      expect(transform.value).toBe('test1 test2');
+      expect(transform.version).toBe(0);
+      expect(transform.dirty).toBe(true);
+
+      read(transform);
+
+      expect(transform.value).toBe('sievert sievert');
+      expect(transform.version).toBe(1);
+      expect(transform.dirty).toBe(false);
     });
   });
 });

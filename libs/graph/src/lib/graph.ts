@@ -132,7 +132,7 @@ function beforeReadTransform(transform: Sink & Source): void {
   }
 
   if (transform.value === INIT) {
-    updateTransform(transform);
+    initTransform(transform);
   } else if (
     transform.dirty === true ||
     transform.sourceVersions?.some((v, i) => transform.sources[i].version > v)
@@ -140,6 +140,16 @@ function beforeReadTransform(transform: Sink & Source): void {
     detach(transform);
     updateTransform(transform);
   }
+}
+
+function initTransform(transform: Sink & Source): void {
+  const prev = currentSink;
+  currentSink = transform;
+
+  transform.value = PROGRESS;
+  transform.value = transform.fn();
+
+  currentSink = prev;
 }
 
 function updateTransform(transform: Sink & Source): void {
