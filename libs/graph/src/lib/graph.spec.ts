@@ -27,6 +27,19 @@ describe('graph', () => {
 
       expect(spy).toHaveBeenCalledOnce();
     });
+
+    it('should throw on infinite update loop', () => {
+      const source = sourceNode('test1');
+
+      const sink = sinkNode(() => {
+        read(source);
+        update(source, 'sievert');
+      });
+
+      enqueue(sink);
+
+      expect(() => tick()).toThrow('Infinite loop');
+    });
   });
 
   describe('enqueue', () => {

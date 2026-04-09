@@ -23,5 +23,8 @@
     "tslib": "^2.3.0",
     "@sievert/renderer": "workspace:*",
     "@sievert/graph": "workspace:*"
+  },
+  "devDependencies": {
+    "@sievert/signals": "workspace:*"
   }
 }

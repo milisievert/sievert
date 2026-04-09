@@ -22,6 +22,11 @@ export function tick(): boolean {
     return false;
   }
 
+  if (currentSink && nextTick.includes(currentSink)) {
+    reset();
+    throw new Error('Infinite loop');
+  }
+
   let sink: Sink | undefined;
 
   while ((sink = nextTick.shift())) {
@@ -32,6 +37,14 @@ export function tick(): boolean {
   }
 
   return true;
+}
+
+function reset() {
+  currentSink = null;
+
+  for (let i = 0; i < nextTick.length; i++) {
+    nextTick.pop();
+  }
 }
 
 export function enqueue(sink: Sink): void {
