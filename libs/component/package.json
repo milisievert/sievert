@@ -22,7 +22,6 @@
   "dependencies": {
     "tslib": "^2.3.0",
     "@sievert/renderer": "workspace:*",
-    "@sievert/graph": "workspace:*",
-    "@sievert/signals": "workspace:*"
+    "@sievert/graph": "workspace:*"
   }
 }
