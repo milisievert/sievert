@@ -7,7 +7,7 @@ export const Counter = component({
   render: () => {
     const count = signal(0);
 
-    const logCount = effect(() => {
+    effect(() => {
       console.log(`Count updated: ${count()}`);
     });
 
