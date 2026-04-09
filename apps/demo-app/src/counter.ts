@@ -1,4 +1,4 @@
-import { component } from '@sievert/component';
+import { component, effect } from '@sievert/component';
 import { html } from '@sievert/renderer';
 import { signal } from '@sievert/signals';
 
@@ -6,6 +6,10 @@ export const Counter = component({
   name: 'sv-counter',
   render: () => {
     const count = signal(0);
+
+    const logCount = effect(() => {
+      console.log(`Count updated: ${count()}`);
+    });
 
     return html`
       <div
