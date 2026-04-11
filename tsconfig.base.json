@@ -5,7 +5,7 @@
     "emitDeclarationOnly": true,
     "importHelpers": true,
     "isolatedModules": true,
-    "lib": ["esnext", "dom", "dom.iterable"],
+    "lib": ["esnext", "dom"],
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "noEmitOnError": true,
@@ -16,16 +16,6 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "es2022",
-    "customConditions": ["@sievert/source"],
-    "baseUrl": ".",
-    "rootDir": ".",
-    "paths": {
-      "@sievertjs/core": ["packages/core/src/index.ts"],
-      "@sievert/parser": ["libs/parser/src/index.ts"],
-      "@sievert/graph": ["libs/graph/src/index.ts"],
-      "@sievert/signals": ["libs/signals/src/index.ts"],
-      "@sievert/renderer": ["libs/renderer/src/index.ts"],
-      "@sievert/component": ["libs/component/src/index.ts"]
-    }
+    "customConditions": ["@sievert/source"]
   }
 }

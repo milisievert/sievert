@@ -13,10 +13,13 @@ type ComponentOptions = {
   render: () => HtmlResult;
 };
 
-export type SvComponent = ReturnType<typeof component>;
+export type SvComponent = {
+  new (): HTMLElement;
+  define(): void;
+};
 
-export function component(options: ComponentOptions) {
-  const SvComponent = class extends HTMLElement {
+export function component(options: ComponentOptions): SvComponent {
+  const SvComponentElement = class extends HTMLElement {
     static #isDefined = false;
 
     #renderContext = getContext();
@@ -34,7 +37,7 @@ export function component(options: ComponentOptions) {
         );
       }
 
-      customElements.define(options.name, SvComponent);
+      customElements.define(options.name, SvComponentElement);
     }
 
     connectedCallback() {
@@ -61,5 +64,5 @@ export function component(options: ComponentOptions) {
     }
   };
 
-  return SvComponent;
+  return SvComponentElement as unknown as SvComponent;
 }
