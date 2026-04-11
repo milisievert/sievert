@@ -6,4 +6,5 @@ export {
   deactivate,
   getContext,
   withContext,
-} from './lib/render-context.js';
+} from './lib/context/render-context.js';
+export { createOutputRef, type OutputRef } from './lib/context/output-ref.js';

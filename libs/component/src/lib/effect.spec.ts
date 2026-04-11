@@ -13,7 +13,7 @@ describe('effect', () => {
     });
   });
 
-  it('should be triggered after component is connected when called in component context', () => {
+  it('triggers after component is connected when called in component context', () => {
     const fn = vi.fn();
 
     const TestComponent = component({
@@ -33,14 +33,14 @@ describe('effect', () => {
     expect(fn).toHaveBeenCalledOnce();
   });
 
-  it('should be triggered immediately when called outside component context', () => {
+  it('triggers immediately when called outside component context', () => {
     const fn = vi.fn();
     effect(fn, { track: false });
 
     expect(fn).toHaveBeenCalledOnce();
   });
 
-  it('should throw when called with tracking outside component context', () => {
+  it('throws when called with tracking outside component context', () => {
     expect(() => effect(vi.fn())).toThrow(
       'effect() called outside of component context. If this was intentional, disable the track option.',
     );

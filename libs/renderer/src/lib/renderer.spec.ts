@@ -1,6 +1,6 @@
 import { Attribute, CommentNode, ElementNode } from '@sievert/parser';
 import { render } from './renderer.js';
-import { createContext } from './render-context.js';
+import { createContext } from './context/render-context.js';
 
 describe('renderer', () => {
   describe('elements', () => {

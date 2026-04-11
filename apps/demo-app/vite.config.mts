@@ -5,6 +5,9 @@ import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 export default defineConfig(() => ({
   root: import.meta.dirname,
   cacheDir: '../../node_modules/.vite/apps/renderer-demo',
+  resolve: {
+    conditions: ['@sievert/source'],
+  },
   server: {
     port: 4200,
     host: 'localhost',
