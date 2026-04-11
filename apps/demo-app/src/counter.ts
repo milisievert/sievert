@@ -1,14 +1,16 @@
-import { component, effect } from '@sievert/component';
+import { component, effect, output } from '@sievert/component';
 import { html } from '@sievert/renderer';
 import { signal } from '@sievert/signals';
 
 export const Counter = component({
   name: 'sv-counter',
   render: () => {
+    const countChange = output<number>('countchange');
     const count = signal(0);
 
     effect(() => {
       console.log(`Count updated: ${count()}`);
+      countChange(count());
     });
 
     return html`

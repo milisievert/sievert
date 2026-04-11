@@ -13,7 +13,7 @@ import type {
   TextNode,
 } from '@sievert/parser';
 import { getSource, isSignal } from '@sievert/signals';
-import { type RenderContext } from './render-context.js';
+import { type RenderContext } from './context/render-context.js';
 
 const tagNameBlackList = [
   'html',
@@ -112,7 +112,7 @@ export function render(
     context.eventListeners.add({
       element,
       name: attr.name.slice(2),
-      fn: async () => await beforeTick(handler as () => unknown),
+      fn: async (event) => await beforeTick(() => handler(event)),
     });
   };
 

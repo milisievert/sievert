@@ -5,7 +5,7 @@ import {
   type RenderContext,
   createContext,
   getContext,
-} from './render-context.js';
+} from './context/render-context.js';
 
 export type HtmlResult = {
   documentFragment: DocumentFragment;

@@ -6,4 +6,4 @@ export {
   deactivate,
   getContext,
   withContext,
-} from './lib/render-context.js';
+} from './lib/context/render-context.js';

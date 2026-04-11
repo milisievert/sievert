@@ -22,8 +22,8 @@ export function component(options: ComponentOptions): SvComponent {
   const SvComponentElement = class extends HTMLElement {
     static #isDefined = false;
 
-    #renderContext = getContext();
-    #hasOwnContext = this.#renderContext === null;
+    #renderContext = createContext();
+    #hasParentContext = !!getContext();
     #isRendered = false;
 
     static define() {
@@ -38,29 +38,25 @@ export function component(options: ComponentOptions): SvComponent {
       }
 
       customElements.define(options.name, SvComponentElement);
+      this.#isDefined = true;
     }
 
     connectedCallback() {
-      if (!this.#renderContext) {
-        this.#renderContext = createContext();
-      }
-
       if (!this.#isRendered) {
         const result = withContext(this.#renderContext, () => options.render());
         this.appendChild(result.documentFragment);
         this.#isRendered = true;
       }
 
-      if (this.#hasOwnContext) {
-        activate(this.#renderContext);
+      activate(this.#renderContext, this);
+
+      if (!this.#hasParentContext) {
         tick();
       }
     }
 
     disconnectedCallback() {
-      if (this.#hasOwnContext && this.#renderContext) {
-        deactivate(this.#renderContext);
-      }
+      deactivate(this.#renderContext);
     }
   };
 

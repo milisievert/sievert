@@ -14,7 +14,7 @@ describe('component', () => {
   });
 
   describe('define', () => {
-    it('should define custom element', () => {
+    it('defines custom element', () => {
       const TestComponent = component({
         name: 'test-component',
         render: () => html``,
@@ -25,7 +25,7 @@ describe('component', () => {
       expect(customElements.get('test-component')).toBe(TestComponent);
     });
 
-    it('should throw on duplicate component name', () => {
+    it('throws on duplicate component name', () => {
       const TestComponent = component({
         name: 'test-component',
         render: () => html``,
@@ -44,7 +44,7 @@ describe('component', () => {
     });
   });
 
-  it('should render template when connected', () => {
+  it('renders template when connected', () => {
     const TestComponent = component({
       name: 'test-component',
       render: () => html`test`,
@@ -57,7 +57,7 @@ describe('component', () => {
     expect(element.textContent).toBe('test');
   });
 
-  it('should not rerender template when reconnected', () => {
+  it('does not rerender template when reconnected', () => {
     const render = vi.fn(() => html`test`);
 
     const TestComponent = component({
@@ -74,7 +74,7 @@ describe('component', () => {
     expect(render).toHaveBeenCalledOnce();
   });
 
-  it('should activate sinks when connected', () => {
+  it('activates sinks when connected', () => {
     const text = signal('test');
 
     const TestComponent = component({
@@ -94,7 +94,7 @@ describe('component', () => {
     expect(element.textContent).toBe('sievert');
   });
 
-  it('should deactivate sinks when disconnected', () => {
+  it('deactivates sinks when disconnected', () => {
     const text = signal('test');
 
     const TestComponent = component({
@@ -111,7 +111,7 @@ describe('component', () => {
     expect(element.textContent).toBe('test');
   });
 
-  it('should reactivate sinks when reconnected', () => {
+  it('reactivates sinks when reconnected', () => {
     const text = signal('test');
 
     const TestComponent = component({
@@ -132,7 +132,7 @@ describe('component', () => {
     expect(element.textContent).toBe('test');
   });
 
-  it('should activate event listeners when connected', () => {
+  it('activates event listeners when connected', () => {
     const fn = vi.fn();
 
     const TestComponent = component({
@@ -148,7 +148,7 @@ describe('component', () => {
     expect(fn).toHaveBeenCalledOnce();
   });
 
-  it('should deactivate event listeners when disconnected', () => {
+  it('deactivates event listeners when disconnected', () => {
     const fn = vi.fn();
 
     const TestComponent = component({
@@ -165,7 +165,7 @@ describe('component', () => {
     expect(fn).toHaveBeenCalledTimes(0);
   });
 
-  it('should reactivate event listeners when reconnected', () => {
+  it('reactivates event listeners when reconnected', () => {
     const fn = vi.fn();
 
     const TestComponent = component({
