@@ -1,0 +1,11 @@
+{
+  "migrations": [],
+  "nx-console": {
+    "initialGitRef": {
+      "ref": "33bae907d7fbe1bcf899fd04ac1cfd20ed4b23a5",
+      "subject": "chore: update agent setup"
+    },
+    "targetVersion": "latest",
+    "confirmedPackageUpdates": true
+  }
+}
