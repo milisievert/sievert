@@ -1,5 +1,4 @@
-import { getContext } from '@sievert/renderer';
-import { createOutputRef } from '../../../renderer/src/lib/context/output-ref.js';
+import { createOutputRef, getContext } from '@sievert/renderer';
 
 export function output<T = void>(
   name: string,
