@@ -1,10 +1,4 @@
-import {
-  type Source,
-  read,
-  sourceNode,
-  transformNode,
-  update,
-} from '@sievert/graph';
+import { type Source, read, update } from '@sievert/graph';
 
 type SignalGetter<T> = () => T;
 type SignalSetter<T> = (value: T) => void;
@@ -34,9 +28,7 @@ export function getSource(signal: Signal<unknown>): Source {
   return signal[SIGNAL];
 }
 
-export function createSignal<T>(fn: () => T) {
-  const node = transformNode(fn);
-
+export function createSignal<T>(node: Source) {
   return Object.defineProperties(() => read(node), {
     [SIGNAL]: {
       value: node,
@@ -44,8 +36,7 @@ export function createSignal<T>(fn: () => T) {
   }) as Signal<T>;
 }
 
-export function createWritableSignal<T>(value: T) {
-  const node = sourceNode(value);
+export function createWritableSignal<T>(node: Source) {
   let readOnly: Signal<unknown> | undefined;
 
   return Object.defineProperties(() => read(node), {
@@ -64,7 +55,7 @@ export function createWritableSignal<T>(value: T) {
     },
     readonly: {
       value: () => {
-        return (readOnly ??= createSignal(() => read(node)));
+        return (readOnly ??= createSignal(node));
       },
     },
   }) as WritableSignal<T>;

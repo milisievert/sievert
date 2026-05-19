@@ -1,6 +1,18 @@
-import { html } from '@sievert/renderer';
+import { html, HtmlResult } from '@sievert/renderer';
 import { component } from './component.js';
 import { signal } from '@sievert/signals';
+import { input } from './input.js';
+
+function createComponent(render: () => HtmlResult) {
+  component({ name: 'test-component', render }).define();
+  return document.createElement('test-component');
+}
+
+function renderComponent(render: () => HtmlResult) {
+  const el = createComponent(render);
+  document.documentElement.appendChild(el);
+  return el;
+}
 
 describe('component', () => {
   beforeEach(() => {
@@ -44,142 +56,125 @@ describe('component', () => {
     });
   });
 
-  it('renders template when connected', () => {
-    const TestComponent = component({
-      name: 'test-component',
-      render: () => html`test`,
+  describe('connectedCallback', () => {
+    it('renders template', () => {
+      const el = renderComponent(() => html`test`);
+      expect(el.textContent).toBe('test');
     });
 
-    TestComponent.define();
-    const element = document.createElement('test-component');
-    document.documentElement.appendChild(element);
+    it('renders template once', () => {
+      const render = vi.fn(() => html`test`);
+      const el = renderComponent(render);
 
-    expect(element.textContent).toBe('test');
+      document.documentElement.appendChild(el);
+      document.documentElement.removeChild(el);
+      document.documentElement.appendChild(el);
+
+      expect(render).toHaveBeenCalledOnce();
+    });
+
+    it('activates sinks', () => {
+      const text = signal('test');
+      const el = createComponent(() => html`${text}`);
+      expect(el.textContent).toBe('');
+
+      document.documentElement.appendChild(el);
+      expect(el.textContent).toBe('test');
+
+      text.set('sievert');
+      expect(el.textContent).toBe('sievert');
+    });
+
+    it('reactivates sinks', () => {
+      const text = signal('test');
+      const el = createComponent(() => html`${text}`);
+
+      document.documentElement.appendChild(el);
+      document.documentElement.removeChild(el);
+
+      text.set('sievert');
+
+      document.documentElement.appendChild(el);
+      expect(el.textContent).toBe('sievert');
+
+      text.set('test');
+      expect(el.textContent).toBe('test');
+    });
+
+    it('activates event listeners', () => {
+      const fn = vi.fn();
+      const el = createComponent(() => html`<button onclick=${fn}></button>`);
+
+      el.firstElementChild?.dispatchEvent(new MouseEvent('click'));
+      document.documentElement.appendChild(el);
+      el.firstElementChild?.dispatchEvent(new MouseEvent('click'));
+
+      expect(fn).toHaveBeenCalledOnce();
+    });
+
+    it('reactivates event listeners', () => {
+      const fn = vi.fn();
+
+      const el = renderComponent(() => html`<button onclick=${fn}></button>`);
+      document.documentElement.removeChild(el);
+      document.documentElement.appendChild(el);
+
+      el.firstElementChild?.dispatchEvent(new MouseEvent('click'));
+      expect(fn).toHaveBeenCalledOnce();
+    });
   });
 
-  it('does not rerender template when reconnected', () => {
-    const render = vi.fn(() => html`test`);
+  describe('disconnectedCallback', () => {
+    it('deactivates sinks', () => {
+      const text = signal('test');
 
-    const TestComponent = component({
-      name: 'test-component',
-      render,
+      const el = renderComponent(() => html`${text}`);
+      document.documentElement.removeChild(el);
+
+      text.set('sievert');
+      expect(el.textContent).toBe('test');
     });
 
-    TestComponent.define();
-    const element = document.createElement('test-component');
-    document.documentElement.appendChild(element);
-    document.documentElement.removeChild(element);
-    document.documentElement.appendChild(element);
+    it('deactivates event listeners', () => {
+      const fn = vi.fn();
 
-    expect(render).toHaveBeenCalledOnce();
+      const el = renderComponent(() => html`<button onclick=${fn}></button>`);
+      document.documentElement.removeChild(el);
+
+      el.firstElementChild?.dispatchEvent(new MouseEvent('click'));
+      expect(fn).toHaveBeenCalledTimes(0);
+    });
   });
 
-  it('activates sinks when connected', () => {
-    const text = signal('test');
+  describe('setAttribute', () => {
+    it('updates attributes', () => {
+      const el = renderComponent(() => html``);
 
-    const TestComponent = component({
-      name: 'test-component',
-      render: () => html`${text}`,
+      el.setAttribute('test', 'sievert');
+
+      expect(el.getAttribute('test')).toBe('sievert');
     });
 
-    TestComponent.define();
+    it('updates inputs', () => {
+      const el = renderComponent(() => {
+        const text = input<string>('text');
+        return html`${text}`;
+      });
 
-    const element = document.createElement('test-component');
-    expect(element.textContent).toBe('');
+      el.setAttribute('text', 'sievert');
 
-    document.documentElement.appendChild(element);
-    expect(element.textContent).toBe('test');
-
-    text.set('sievert');
-    expect(element.textContent).toBe('sievert');
-  });
-
-  it('deactivates sinks when disconnected', () => {
-    const text = signal('test');
-
-    const TestComponent = component({
-      name: 'test-component',
-      render: () => html`${text}`,
+      expect(el.textContent).toBe('sievert');
     });
 
-    TestComponent.define();
-    const element = document.createElement('test-component');
-    document.documentElement.appendChild(element);
-    document.documentElement.removeChild(element);
+    it('handles complex values', () => {
+      const el = renderComponent(() => {
+        const person = input<{ name: string; age: number }>('person');
+        return html`${() => JSON.stringify(person())}`;
+      });
 
-    text.set('sievert');
-    expect(element.textContent).toBe('test');
-  });
+      el.setAttribute('person', { name: 'sievert', age: 0 } as any);
 
-  it('reactivates sinks when reconnected', () => {
-    const text = signal('test');
-
-    const TestComponent = component({
-      name: 'test-component',
-      render: () => html`${text}`,
+      expect(el.textContent).toBe('{"name":"sievert","age":0}');
     });
-
-    TestComponent.define();
-    const element = document.createElement('test-component');
-    document.documentElement.appendChild(element);
-    document.documentElement.removeChild(element);
-    text.set('sievert');
-
-    document.documentElement.appendChild(element);
-    expect(element.textContent).toBe('sievert');
-
-    text.set('test');
-    expect(element.textContent).toBe('test');
-  });
-
-  it('activates event listeners when connected', () => {
-    const fn = vi.fn();
-
-    const TestComponent = component({
-      name: 'test-component',
-      render: () => html`<button onclick=${fn}></button>`,
-    });
-
-    TestComponent.define();
-    const element = document.createElement('test-component');
-    document.documentElement.appendChild(element);
-
-    element.firstElementChild?.dispatchEvent(new MouseEvent('click'));
-    expect(fn).toHaveBeenCalledOnce();
-  });
-
-  it('deactivates event listeners when disconnected', () => {
-    const fn = vi.fn();
-
-    const TestComponent = component({
-      name: 'test-component',
-      render: () => html`<button onclick=${fn}></button>`,
-    });
-
-    TestComponent.define();
-    const element = document.createElement('test-component');
-    document.documentElement.appendChild(element);
-    document.documentElement.removeChild(element);
-
-    element.firstElementChild?.dispatchEvent(new MouseEvent('click'));
-    expect(fn).toHaveBeenCalledTimes(0);
-  });
-
-  it('reactivates event listeners when reconnected', () => {
-    const fn = vi.fn();
-
-    const TestComponent = component({
-      name: 'test-component',
-      render: () => html`<button onclick=${fn}></button>`,
-    });
-
-    TestComponent.define();
-    const element = document.createElement('test-component');
-    document.documentElement.appendChild(element);
-    document.documentElement.removeChild(element);
-    document.documentElement.appendChild(element);
-
-    element.firstElementChild?.dispatchEvent(new MouseEvent('click'));
-    expect(fn).toHaveBeenCalledOnce();
   });
 });

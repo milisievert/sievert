@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 import { beforeTick, detach, enqueue, read, tick, update } from './graph.js';
-import { transformNode, sinkNode, sourceNode } from './nodes.js';
+import { createTransform, createSink, createSource } from './nodes.js';
 
 describe('graph', () => {
   describe('tick', () => {
@@ -11,7 +11,7 @@ describe('graph', () => {
     });
 
     it('should return true when queue is not empty', () => {
-      enqueue(sinkNode(() => 'test'));
+      enqueue(createSink(() => 'test'));
 
       const result = tick();
 
@@ -19,7 +19,7 @@ describe('graph', () => {
     });
 
     it('should trigger enqueued sink node', () => {
-      const sink = sinkNode(() => 'test');
+      const sink = createSink(() => 'test');
       const spy = vi.spyOn(sink, 'fn');
 
       enqueue(sink);
@@ -28,10 +28,10 @@ describe('graph', () => {
       expect(spy).toHaveBeenCalledOnce();
     });
 
-    it('should throw on infinite update loop', () => {
-      const source = sourceNode('test1');
+    it('should throw on direct infinite update loop', () => {
+      const source = createSource('test1');
 
-      const sink = sinkNode(() => {
+      const sink = createSink(() => {
         read(source);
         update(source, 'sievert');
       });
@@ -40,11 +40,22 @@ describe('graph', () => {
 
       expect(() => tick()).toThrow('Infinite loop');
     });
+
+    // TODO: sievert #46
+    // it('should throw on indirect infinite update loop', () => {
+    //   const source1 = createSource('test1');
+    //   const source2 = createSource('test2');
+
+    //   enqueue(createSink(() => update(source2, `${read(source1)} sievert`)));
+    //   enqueue(createSink(() => update(source1, `${read(source2)} sievert`)));
+
+    //   expect(() => tick()).toThrow('Infinite loop');
+    // });
   });
 
   describe('enqueue', () => {
     it('should skip duplicates', () => {
-      const sink = sinkNode(() => 'test');
+      const sink = createSink(() => 'test');
       const spy = vi.spyOn(sink, 'fn');
 
       enqueue(sink);
@@ -57,8 +68,8 @@ describe('graph', () => {
 
   describe('detach', () => {
     it('should detach sink node', () => {
-      const source = sourceNode('test');
-      const sink = sinkNode(() => read(source));
+      const source = createSource('test');
+      const sink = createSink(() => read(source));
 
       enqueue(sink);
       tick();
@@ -70,9 +81,9 @@ describe('graph', () => {
     });
 
     it('should propagate', () => {
-      const source = sourceNode('test');
-      const transform = transformNode(() => read(source));
-      const sink = sinkNode(() => read(transform));
+      const source = createSource('test');
+      const transform = createTransform(() => read(source));
+      const sink = createSink(() => read(transform));
 
       enqueue(sink);
       tick();
@@ -86,15 +97,15 @@ describe('graph', () => {
 
   describe('read', () => {
     it('should throw with circular reference', () => {
-      const transform1 = transformNode(() => read(transform2));
-      const transform2 = transformNode(() => read(transform1));
+      const transform1 = createTransform(() => read(transform2));
+      const transform2 = createTransform(() => read(transform1));
 
       expect(() => read(transform1)).toThrow('Infinite loop');
     });
 
     it('should initialize transform node and return value', () => {
-      const source = sourceNode('test');
-      const transform = transformNode(() => read(source));
+      const source = createSource('test');
+      const transform = createTransform(() => read(source));
       const spy = vi.spyOn(transform, 'fn');
 
       const result = read(transform);
@@ -106,8 +117,8 @@ describe('graph', () => {
     });
 
     it('should connect nodes', () => {
-      const source = sourceNode('test');
-      const transform = transformNode(() => read(source));
+      const source = createSource('test');
+      const transform = createTransform(() => read(source));
 
       read(transform);
 
@@ -118,10 +129,10 @@ describe('graph', () => {
     });
 
     it('should connect nodes conditionally', () => {
-      const source1 = sourceNode(true);
-      const source2 = sourceNode('test');
+      const source1 = createSource(true);
+      const source2 = createSource('test');
 
-      const sink = sinkNode(() => {
+      const sink = createSink(() => {
         if (read(source1)) {
           read(source2);
         }
@@ -142,9 +153,9 @@ describe('graph', () => {
     });
 
     it('should return updated value', () => {
-      const source1 = sourceNode('hello');
-      const source2 = sourceNode('world');
-      const transform = transformNode(
+      const source1 = createSource('hello');
+      const source2 = createSource('world');
+      const transform = createTransform(
         () => `${read(source1)} ${read(source2)}`,
       );
 
@@ -160,7 +171,7 @@ describe('graph', () => {
 
   describe('update', () => {
     it('should skip update with strict equal value', () => {
-      const source = sourceNode('test');
+      const source = createSource('test');
 
       update(source, 'test');
 
@@ -168,7 +179,7 @@ describe('graph', () => {
     });
 
     it('should update value and version', () => {
-      const source = sourceNode('test');
+      const source = createSource('test');
 
       update(source, 'sievert');
 
@@ -177,8 +188,8 @@ describe('graph', () => {
     });
 
     it('should dirty mark dependant transform nodes', () => {
-      const source = sourceNode('test');
-      const transform = transformNode(() => read(source));
+      const source = createSource('test');
+      const transform = createTransform(() => read(source));
 
       read(transform);
       update(source, 'sievert');
@@ -187,8 +198,8 @@ describe('graph', () => {
     });
 
     it('should run dependant sink nodes', () => {
-      const source = sourceNode('test');
-      const sink = sinkNode(() => read(source));
+      const source = createSource('test');
+      const sink = createSink(() => read(source));
       const sinkSpy = vi.spyOn(sink, 'fn');
 
       enqueue(sink);
@@ -202,8 +213,8 @@ describe('graph', () => {
 
   describe('beforeTick', () => {
     it('should dirty mark dependant transform nodes on update', async () => {
-      const source = sourceNode('test');
-      const transform = transformNode(() => read(source));
+      const source = createSource('test');
+      const transform = createTransform(() => read(source));
 
       read(transform);
 
@@ -213,8 +224,8 @@ describe('graph', () => {
     });
 
     it('should run dependant sink nodes on update', async () => {
-      const source = sourceNode('test');
-      const sink = sinkNode(() => read(source));
+      const source = createSource('test');
+      const sink = createSink(() => read(source));
       const sinkSpy = vi.spyOn(sink, 'fn');
 
       enqueue(sink);
@@ -226,9 +237,9 @@ describe('graph', () => {
     });
 
     it('should perform bulk updates', async () => {
-      const source1 = sourceNode('test1');
-      const source2 = sourceNode('test2');
-      const transform = transformNode(
+      const source1 = createSource('test1');
+      const source2 = createSource('test2');
+      const transform = createTransform(
         () => `${read(source1)} ${read(source2)}`,
       );
 
@@ -249,5 +260,28 @@ describe('graph', () => {
       expect(transform.version).toBe(1);
       expect(transform.dirty).toBe(false);
     });
+
+    // TODO: sievert #46
+    // it('should perform chain updates', async () => {
+    //   const source1 = createSource('test1');
+    //   const source2 = createSource('test2');
+
+    //   const effect1 = vi.fn(() => update(source2, read(source1)));
+    //   const effect2 = vi.fn(() => read(source2));
+
+    //   enqueue(createSink(effect1));
+    //   enqueue(createSink(effect2));
+    //   tick();
+
+    //   expect(effect1).toHaveBeenCalledOnce();
+    //   expect(effect2).toHaveBeenCalledOnce();
+
+    //   await beforeTick(() => update(source1, 'sievert'));
+
+    //   expect(source1.value).toBe('sievert');
+    //   expect(source2.value).toBe('sievert');
+    //   expect(effect1).toHaveBeenCalledTimes(2);
+    //   expect(effect2).toHaveBeenCalledTimes(2);
+    // });
   });
 });

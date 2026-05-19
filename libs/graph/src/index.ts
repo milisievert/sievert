@@ -1,5 +1,3 @@
-export type { Sink, Source } from './lib/nodes.js';
-
 export {
   detach,
   enqueue,
@@ -7,5 +5,13 @@ export {
   tick,
   update,
   beforeTick,
+  afterNextTick
 } from './lib/graph.js';
-export { sinkNode, sourceNode, transformNode } from './lib/nodes.js';
+
+export {
+  type Sink,
+  type Source,
+  createSink,
+  createSource,
+  createTransform,
+} from './lib/nodes.js';

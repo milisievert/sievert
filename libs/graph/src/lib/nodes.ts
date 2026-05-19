@@ -13,18 +13,18 @@ export type Sink = {
   dirty?: boolean;
 };
 
-export const sourceNode = (value: unknown): Source => ({
+export const createSource = (value: unknown): Source => ({
   value,
   sinks: [],
   version: 0,
 });
 
-export const sinkNode = (fn: () => unknown): Sink => ({
+export const createSink = (fn: () => unknown): Sink => ({
   fn,
   sources: [],
 });
 
-export const transformNode = (fn: () => unknown): Sink & Source => ({
+export const createTransform = (fn: () => unknown): Sink & Source => ({
   fn,
   value: INIT,
   version: 0,
