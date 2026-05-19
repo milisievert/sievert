@@ -22,7 +22,9 @@ export function input<T, TRequired extends boolean = false>(
   const context = getContext();
 
   if (context === null) {
-    throw new Error(`input("${options.name}") called outside component context`);
+    throw new Error(
+      `input("${options.name}") called outside component context`,
+    );
   }
 
   if (context.inputs.has(options.name)) {

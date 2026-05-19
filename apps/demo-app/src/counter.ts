@@ -8,7 +8,7 @@ export const Counter = component({
       name: 'count',
       required: true,
     });
-    
+
     const countChange = output<number>({
       name: 'countchange',
     });
