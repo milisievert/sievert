@@ -1,11 +1,13 @@
 import { detach, enqueue, type Sink } from '@sievert/graph';
 import { type EventListenerRef } from './event-listener-ref.js';
-import { initOutputRef, OutputRef } from './output-ref.js';
+import { initOutputRef, type OutputRef } from './output-ref.js';
+import type { InputRef } from './input-ref.js';
 
 export type RenderContext = {
   sinks: Set<Sink>;
   eventListeners: Set<EventListenerRef>;
   outputs: Set<OutputRef>;
+  inputs: Map<string, InputRef>;
 };
 
 let current: RenderContext | null = null;
@@ -18,6 +20,7 @@ export const createContext = (): RenderContext => ({
   sinks: new Set(),
   eventListeners: new Set(),
   outputs: new Set(),
+  inputs: new Map(),
 });
 
 export function withContext<T>(context: RenderContext, fn: () => T) {

@@ -1,9 +1,9 @@
 import {
   beforeTick,
   read,
-  sinkNode,
+  createSink,
   Source,
-  transformNode,
+  createTransform,
 } from '@sievert/graph';
 import type {
   Attribute,
@@ -48,12 +48,12 @@ export function render(
 
     const sourceNode = isSignal(expression)
       ? getSource(expression)
-      : transformNode(expression as () => unknown);
+      : createTransform(expression as () => unknown);
 
     context.sinks.add(
-      sinkNode(() =>
-        element.setAttribute(attr.name, read(sourceNode) as string),
-      ),
+      createSink(() => {
+        element.setAttribute(attr.name, read(sourceNode) as string);
+      }),
     );
   };
 
@@ -70,7 +70,7 @@ export function render(
       if (typeof expression === 'function') {
         const sourceNode = isSignal(expression)
           ? getSource(expression)
-          : transformNode(expression as () => unknown);
+          : createTransform(expression as () => unknown);
 
         dynamicExpressions.push([key, sourceNode]);
       } else {
@@ -88,7 +88,7 @@ export function render(
     }
 
     context.sinks.add(
-      sinkNode(() => {
+      createSink(() => {
         let dynamicContent = staticContent;
 
         for (const [key, source] of dynamicExpressions) {

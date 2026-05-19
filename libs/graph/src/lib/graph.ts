@@ -4,17 +4,28 @@ import { ERROR, INIT, PROGRESS } from './symbols.js';
 let autoTick = true;
 let currentSink: Sink | null = null;
 const nextTick: Sink[] = [];
+const postTick: (() => void)[] = [];
 
 export async function beforeTick(
   fn: (() => Promise<unknown>) | (() => unknown),
 ) {
   autoTick = false;
 
-  const result = await fn();
-  tick();
+  try {
+    return await fn();
+  } finally {
+    tick();
+    autoTick = true;
 
-  autoTick = true;
-  return result;
+    let noe: (() => void) | undefined;
+    while ((noe = postTick.pop())) {
+      noe();
+    }
+  }
+}
+
+export function afterNextTick(fn: () => void) {
+  postTick.push(fn);
 }
 
 export function tick(): boolean {
@@ -28,12 +39,24 @@ export function tick(): boolean {
   }
 
   let sink: Sink | undefined;
+  const prev = currentSink;
 
-  while ((sink = nextTick.shift())) {
-    detach(sink);
-    currentSink = sink;
-    sink.fn();
-    currentSink = null;
+  try {
+    while ((sink = nextTick.pop())) {
+      detach(sink);
+      currentSink = sink;
+      sink.fn();
+    }
+  } catch (error) {
+    if (
+      error instanceof RangeError &&
+      error.message === 'Maximum call stack size exceeded'
+    ) {
+      throw new Error('Infinite loop', { cause: error });
+    }
+    throw error;
+  } finally {
+    currentSink = prev;
   }
 
   return true;

@@ -1,4 +1,4 @@
-import { tick } from '@sievert/graph';
+import { afterNextTick, type Source, tick, update } from '@sievert/graph';
 import {
   type HtmlResult,
   activate,
@@ -19,12 +19,13 @@ export type SvComponent = {
 };
 
 export function component(options: ComponentOptions): SvComponent {
-  const SvComponentElement = class extends HTMLElement {
+  const SvComponent = class extends HTMLElement {
     static #isDefined = false;
 
     #renderContext = createContext();
     #hasParentContext = !!getContext();
     #isRendered = false;
+    #inputs = new Map<string, Source>();
 
     static define() {
       if (this.#isDefined) {
@@ -37,7 +38,7 @@ export function component(options: ComponentOptions): SvComponent {
         );
       }
 
-      customElements.define(options.name, SvComponentElement);
+      customElements.define(options.name, SvComponent);
       this.#isDefined = true;
     }
 
@@ -52,13 +53,42 @@ export function component(options: ComponentOptions): SvComponent {
 
       if (!this.#hasParentContext) {
         tick();
+      } else {
+        afterNextTick(() => {
+          for (const [name, ref] of this.#renderContext.inputs) {
+            if (ref.required && !this.#inputs.has(name)) {
+              throw new Error(
+                `Missing required input "${name}" for component "${options.name}"`,
+              );
+            }
+          }
+        });
       }
     }
 
     disconnectedCallback() {
       deactivate(this.#renderContext);
     }
+
+    override setAttribute(qualifiedName: string, value: unknown): void {
+      const source = this.#inputs.get(qualifiedName);
+
+      if (source) {
+        update(source, value);
+        return;
+      }
+
+      const ref = this.#renderContext.inputs.get(qualifiedName);
+
+      if (ref) {
+        this.#inputs.set(qualifiedName, ref.source);
+        update(ref.source, value);
+        return;
+      }
+
+      super.setAttribute(qualifiedName, value as string);
+    }
   };
 
-  return SvComponentElement as unknown as SvComponent;
+  return SvComponent;
 }

@@ -1,4 +1,4 @@
-import { beforeTick, detach, enqueue, sinkNode, tick } from '@sievert/graph';
+import { beforeTick, detach, enqueue, createSink, tick } from '@sievert/graph';
 import { getContext } from '@sievert/renderer';
 
 type EffectOptions = {
@@ -18,7 +18,7 @@ export function effect(fn: () => void, options?: EffectOptions): EffectRef {
     );
   }
 
-  const node = sinkNode(() => beforeTick(fn));
+  const node = createSink(() => beforeTick(fn));
 
   if (options?.track !== false) {
     context?.sinks.add(node);
