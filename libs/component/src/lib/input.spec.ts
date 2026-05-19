@@ -3,7 +3,7 @@ import { input } from './input.js';
 
 describe('input', () => {
   it('throws when called outside component context', () => {
-    expect(() => input('test')).toThrow(
+    expect(() => input({ name: 'test' })).toThrow(
       'input("test") called outside component context',
     );
   });
@@ -11,8 +11,8 @@ describe('input', () => {
   it('throws with duplicate names in context', () => {
     expect(() =>
       withContext(createContext(), () => {
-        input('test');
-        input('test');
+        input({ name: 'test' });
+        input({ name: 'test' });
       }),
     ).toThrow(`Duplicate input name "test"`);
   });

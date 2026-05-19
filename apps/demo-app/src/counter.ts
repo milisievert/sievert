@@ -4,8 +4,14 @@ import { html } from '@sievert/renderer';
 export const Counter = component({
   name: 'sv-counter',
   render: () => {
-    const count = input<number>('count', { required: true });
-    const countChange = output<number>('countchange');
+    const count = input<number>({
+      name: 'count',
+      required: true,
+    });
+
+    const countChange = output<number>({
+      name: 'countchange',
+    });
 
     effect(() => {
       console.log(`Count updated: ${count()}`);

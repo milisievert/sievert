@@ -157,7 +157,10 @@ describe('component', () => {
 
     it('updates inputs', () => {
       const el = renderComponent(() => {
-        const text = input<string>('text');
+        const text = input<string>({
+          name: 'text',
+        });
+
         return html`${text}`;
       });
 
@@ -168,7 +171,10 @@ describe('component', () => {
 
     it('handles complex values', () => {
       const el = renderComponent(() => {
-        const person = input<{ name: string; age: number }>('person');
+        const person = input<{ name: string; age: number }>({
+          name: 'person',
+        });
+
         return html`${() => JSON.stringify(person())}`;
       });
 

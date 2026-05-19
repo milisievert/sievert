@@ -3,13 +3,15 @@ import { output } from './output.js';
 
 describe('output', () => {
   it('throws when called outside component context', () => {
-    expect(() => output('test')).toThrow(
+    expect(() => output({ name: 'test' })).toThrow(
       'output("test") called outside component context',
     );
   });
 
   it('throws when dispatched before initialization', () => {
-    const outputRef = withContext(createContext(), () => output('test'));
+    const outputRef = withContext(createContext(), () =>
+      output({ name: 'test' }),
+    );
 
     expect(() => outputRef()).toThrow(
       'Dispatcher for output "test" called before initialization',
@@ -19,7 +21,7 @@ describe('output', () => {
   it('dispatches custom events with detail', () => {
     const ctx = createContext();
     const host = document.createElement('div');
-    const outputRef = withContext(ctx, () => output<string>('test'));
+    const outputRef = withContext(ctx, () => output<string>({ name: 'test' }));
 
     activate(ctx, host);
 
