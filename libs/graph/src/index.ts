@@ -5,7 +5,7 @@ export {
   tick,
   update,
   beforeTick,
-  afterNextTick
+  afterNextTick,
 } from './lib/graph.js';
 
 export {

@@ -51,9 +51,9 @@ export function render(
       : createTransform(expression as () => unknown);
 
     context.sinks.add(
-      createSink(() =>{
-        element.setAttribute(attr.name, read(sourceNode) as string)}
-      ),
+      createSink(() => {
+        element.setAttribute(attr.name, read(sourceNode) as string);
+      }),
     );
   };
 
