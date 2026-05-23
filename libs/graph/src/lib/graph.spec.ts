@@ -1,25 +1,34 @@
 import { vi } from 'vitest';
-import { beforeTick, detach, enqueue, read, tick, update } from './graph.js';
-import { createTransform, createSink, createSource } from './nodes.js';
+import {
+  afterNextTick,
+  beforeTick,
+  detach,
+  enqueue,
+  read,
+  tick,
+  update,
+} from './graph.js';
+import { createSink, createSource, createTransform } from './nodes.js';
+import { GraphPriority } from './priority.js';
 
 describe('graph', () => {
   describe('tick', () => {
-    it('should return false when queue is empty', () => {
+    it('returns false when queue is empty', () => {
       const result = tick();
 
       expect(result).toBe(false);
     });
 
-    it('should return true when queue is not empty', () => {
-      enqueue(createSink(() => 'test'));
+    it('returns true when queue is not empty', () => {
+      enqueue(createSink(() => 'test', GraphPriority.DEFAULT));
 
       const result = tick();
 
       expect(result).toBe(true);
     });
 
-    it('should trigger enqueued sink node', () => {
-      const sink = createSink(() => 'test');
+    it('triggers enqueued sink node', () => {
+      const sink = createSink(() => 'test', GraphPriority.DEFAULT);
       const spy = vi.spyOn(sink, 'fn');
 
       enqueue(sink);
@@ -28,34 +37,131 @@ describe('graph', () => {
       expect(spy).toHaveBeenCalledOnce();
     });
 
-    it('should throw on direct infinite update loop', () => {
-      const source = createSource('test1');
+    it('follows graph priority', () => {
+      const lowPriorityFn = vi.fn();
+      const highPriorityFn = vi.fn();
+      const defaultPriorityFn = vi.fn();
 
-      const sink = createSink(() => {
-        read(source);
-        update(source, 'sievert');
-      });
+      enqueue(createSink(lowPriorityFn, GraphPriority.LOW));
+      enqueue(createSink(highPriorityFn, GraphPriority.HIGH));
+      enqueue(createSink(defaultPriorityFn, GraphPriority.DEFAULT));
 
-      enqueue(sink);
+      tick();
 
-      expect(() => tick()).toThrow('Infinite loop');
+      const lowPriorityOrder = lowPriorityFn.mock.invocationCallOrder[0];
+      const highPriorityOrder = highPriorityFn.mock.invocationCallOrder[0];
+      const defaultPriorityOrder =
+        defaultPriorityFn.mock.invocationCallOrder[0];
+
+      expect(lowPriorityOrder).toBeGreaterThan(highPriorityOrder);
+      expect(lowPriorityOrder).toBeGreaterThan(defaultPriorityOrder);
+      expect(defaultPriorityOrder).toBeGreaterThan(highPriorityOrder);
     });
 
-    // TODO: sievert #46
-    // it('should throw on indirect infinite update loop', () => {
-    //   const source1 = createSource('test1');
-    //   const source2 = createSource('test2');
+    it('aborts and resets graph state on error in sink', () => {
+      const throwingFn = vi.fn(() => {
+        throw new Error('Error!');
+      });
 
-    //   enqueue(createSink(() => update(source2, `${read(source1)} sievert`)));
-    //   enqueue(createSink(() => update(source1, `${read(source2)} sievert`)));
+      const abortedFn = vi.fn();
 
-    //   expect(() => tick()).toThrow('Infinite loop');
-    // });
+      enqueue(createSink(throwingFn, GraphPriority.HIGH));
+      enqueue(createSink(abortedFn, GraphPriority.DEFAULT));
+
+      expect(() => tick()).toThrow('Error!');
+      expect(tick()).toBe(false);
+
+      expect(throwingFn).toHaveBeenCalled();
+      expect(abortedFn).not.toHaveBeenCalled();
+    });
+
+    it('runs post tick callbacks after sinks', () => {
+      const sinkFn = vi.fn();
+      const postTickFn = vi.fn();
+
+      enqueue(createSink(sinkFn, GraphPriority.DEFAULT));
+      afterNextTick(postTickFn);
+
+      tick();
+
+      const sinkOrder = sinkFn.mock.invocationCallOrder[0];
+      const postTickOrder = postTickFn.mock.invocationCallOrder[0];
+
+      expect(postTickFn).toHaveBeenCalledOnce();
+      expect(postTickOrder).toBeGreaterThan(sinkOrder);
+    });
+
+    it('always runs post tick callbacks', () => {
+      const postTickFn = vi.fn();
+
+      afterNextTick(postTickFn);
+
+      expect(tick()).toBe(false);
+      expect(postTickFn).toHaveBeenCalled();
+    });
+
+    it('cleans up post tick state', () => {
+      const postTickFn = vi.fn();
+
+      afterNextTick(postTickFn);
+
+      tick();
+      tick();
+
+      expect(postTickFn).toHaveBeenCalledOnce();
+    });
+
+    it('aborts and resets graph state on error in post tick callback', () => {
+      const throwingFn = vi.fn(() => {
+        throw new Error('Error!');
+      });
+
+      const abortedFn = vi.fn();
+
+      afterNextTick(throwingFn);
+      afterNextTick(abortedFn);
+
+      expect(() => tick()).toThrow('Error!');
+
+      tick();
+
+      expect(throwingFn).toHaveBeenCalled();
+      expect(abortedFn).not.toHaveBeenCalled();
+    });
+
+    it('handles chain reactions', () => {
+      const source1 = createSource('');
+      const source2 = createSource('');
+      const source3 = createSource('');
+
+      const sink1 = createSink(() => {
+        update(source2, read(source1));
+      }, GraphPriority.DEFAULT);
+
+      const sink2 = createSink(() => {
+        update(source3, read(source2));
+      }, GraphPriority.DEFAULT);
+
+      const sink3 = createSink(() => {
+        read(source2);
+      }, GraphPriority.DEFAULT);
+
+      enqueue(sink1);
+      enqueue(sink2);
+      enqueue(sink3);
+
+      update(source1, 'sievert');
+      tick();
+
+      expect(source1.value).toBe('sievert');
+      expect(source2.value).toBe('sievert');
+      expect(source3.value).toBe('sievert');
+    });
   });
 
   describe('enqueue', () => {
-    it('should skip duplicates', () => {
-      const sink = createSink(() => 'test');
+    it('skips duplicate sink nodes', () => {
+      const sink = createSink(() => 'test', GraphPriority.DEFAULT);
       const spy = vi.spyOn(sink, 'fn');
 
       enqueue(sink);
@@ -67,9 +173,9 @@ describe('graph', () => {
   });
 
   describe('detach', () => {
-    it('should detach sink node', () => {
+    it('detaches sink nodes', () => {
       const source = createSource('test');
-      const sink = createSink(() => read(source));
+      const sink = createSink(() => read(source), GraphPriority.DEFAULT);
 
       enqueue(sink);
       tick();
@@ -80,10 +186,10 @@ describe('graph', () => {
       expect(sink.sourceVersions?.length).toBeFalsy();
     });
 
-    it('should propagate', () => {
+    it('propagates up graph', () => {
       const source = createSource('test');
       const transform = createTransform(() => read(source));
-      const sink = createSink(() => read(transform));
+      const sink = createSink(() => read(transform), GraphPriority.DEFAULT);
 
       enqueue(sink);
       tick();
@@ -96,14 +202,14 @@ describe('graph', () => {
   });
 
   describe('read', () => {
-    it('should throw with circular reference', () => {
+    it('throws with circular reference', () => {
       const transform1 = createTransform(() => read(transform2));
       const transform2 = createTransform(() => read(transform1));
 
       expect(() => read(transform1)).toThrow('Infinite loop');
     });
 
-    it('should initialize transform node and return value', () => {
+    it('initializes transform node and return value', () => {
       const source = createSource('test');
       const transform = createTransform(() => read(source));
       const spy = vi.spyOn(transform, 'fn');
@@ -116,7 +222,7 @@ describe('graph', () => {
       expect(spy).toHaveBeenCalledOnce();
     });
 
-    it('should connect nodes', () => {
+    it('connects nodes', () => {
       const source = createSource('test');
       const transform = createTransform(() => read(source));
 
@@ -128,7 +234,7 @@ describe('graph', () => {
       expect(transform.sources[0]).toBe(source);
     });
 
-    it('should connect nodes conditionally', () => {
+    it('connects nodes conditionally', () => {
       const source1 = createSource(true);
       const source2 = createSource('test');
 
@@ -136,7 +242,7 @@ describe('graph', () => {
         if (read(source1)) {
           read(source2);
         }
-      });
+      }, GraphPriority.DEFAULT);
 
       enqueue(sink);
       tick();
@@ -199,7 +305,7 @@ describe('graph', () => {
 
     it('should run dependant sink nodes', () => {
       const source = createSource('test');
-      const sink = createSink(() => read(source));
+      const sink = createSink(() => read(source), GraphPriority.DEFAULT);
       const sinkSpy = vi.spyOn(sink, 'fn');
 
       enqueue(sink);
@@ -225,7 +331,7 @@ describe('graph', () => {
 
     it('should run dependant sink nodes on update', async () => {
       const source = createSource('test');
-      const sink = createSink(() => read(source));
+      const sink = createSink(() => read(source), GraphPriority.DEFAULT);
       const sinkSpy = vi.spyOn(sink, 'fn');
 
       enqueue(sink);
@@ -260,28 +366,5 @@ describe('graph', () => {
       expect(transform.version).toBe(1);
       expect(transform.dirty).toBe(false);
     });
-
-    // TODO: sievert #46
-    // it('should perform chain updates', async () => {
-    //   const source1 = createSource('test1');
-    //   const source2 = createSource('test2');
-
-    //   const effect1 = vi.fn(() => update(source2, read(source1)));
-    //   const effect2 = vi.fn(() => read(source2));
-
-    //   enqueue(createSink(effect1));
-    //   enqueue(createSink(effect2));
-    //   tick();
-
-    //   expect(effect1).toHaveBeenCalledOnce();
-    //   expect(effect2).toHaveBeenCalledOnce();
-
-    //   await beforeTick(() => update(source1, 'sievert'));
-
-    //   expect(source1.value).toBe('sievert');
-    //   expect(source2.value).toBe('sievert');
-    //   expect(effect1).toHaveBeenCalledTimes(2);
-    //   expect(effect2).toHaveBeenCalledTimes(2);
-    // });
   });
 });

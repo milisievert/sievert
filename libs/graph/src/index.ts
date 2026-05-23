@@ -15,3 +15,5 @@ export {
   createSource,
   createTransform,
 } from './lib/nodes.js';
+
+export { GraphPriority } from './lib/priority.js';

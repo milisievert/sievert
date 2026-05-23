@@ -1,9 +1,10 @@
 import {
   beforeTick,
-  read,
   createSink,
-  Source,
   createTransform,
+  GraphPriority,
+  read,
+  Source,
 } from '@sievert/graph';
 import type {
   Attribute,
@@ -53,7 +54,7 @@ export function render(
     context.sinks.add(
       createSink(() => {
         element.setAttribute(attr.name, read(sourceNode) as string);
-      }),
+      }, GraphPriority.HIGH),
     );
   };
 
@@ -96,7 +97,7 @@ export function render(
         }
 
         text.textContent = dynamicContent;
-      }),
+      }, GraphPriority.DEFAULT),
     );
   };
 

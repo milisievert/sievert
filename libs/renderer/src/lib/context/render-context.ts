@@ -4,6 +4,7 @@ import { initOutputRef, type OutputRef } from './output-ref.js';
 import type { InputRef } from './input-ref.js';
 
 export type RenderContext = {
+  isRoot: boolean;
   sinks: Set<Sink>;
   eventListeners: Set<EventListenerRef>;
   outputs: Set<OutputRef>;
@@ -17,6 +18,7 @@ export function getContext() {
 }
 
 export const createContext = (): RenderContext => ({
+  isRoot: !getContext(),
   sinks: new Set(),
   eventListeners: new Set(),
   outputs: new Set(),

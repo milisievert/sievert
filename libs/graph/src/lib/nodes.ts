@@ -1,3 +1,4 @@
+import type { GraphPriority } from './priority.js';
 import { INIT } from './symbols.js';
 
 export type Source = {
@@ -11,6 +12,7 @@ export type Sink = {
   sources: Source[];
   sourceVersions?: number[];
   dirty?: boolean;
+  priority?: GraphPriority;
 };
 
 export const createSource = (value: unknown): Source => ({
@@ -19,8 +21,12 @@ export const createSource = (value: unknown): Source => ({
   version: 0,
 });
 
-export const createSink = (fn: () => unknown): Sink => ({
+export const createSink = (
+  fn: () => unknown,
+  priority: GraphPriority,
+): Sink => ({
   fn,
+  priority,
   sources: [],
 });
 

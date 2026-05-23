@@ -4,7 +4,6 @@ import {
   activate,
   createContext,
   deactivate,
-  getContext,
   withContext,
 } from '@sievert/renderer';
 
@@ -23,9 +22,8 @@ export function component(options: ComponentOptions): SvComponent {
     static #isDefined = false;
 
     #renderContext = createContext();
-    #hasParentContext = !!getContext();
-    #isRendered = false;
     #inputs = new Map<string, Source>();
+    #isInitialized = false;
 
     static define() {
       if (this.#isDefined) {
@@ -43,17 +41,10 @@ export function component(options: ComponentOptions): SvComponent {
     }
 
     connectedCallback() {
-      if (!this.#isRendered) {
+      if (!this.#isInitialized) {
         const result = withContext(this.#renderContext, () => options.render());
         this.appendChild(result.documentFragment);
-        this.#isRendered = true;
-      }
 
-      activate(this.#renderContext, this);
-
-      if (!this.#hasParentContext) {
-        tick();
-      } else {
         afterNextTick(() => {
           for (const [name, ref] of this.#renderContext.inputs) {
             if (ref.required && !this.#inputs.has(name)) {
@@ -63,6 +54,14 @@ export function component(options: ComponentOptions): SvComponent {
             }
           }
         });
+
+        this.#isInitialized = true;
+      }
+
+      activate(this.#renderContext, this);
+
+      if (this.#renderContext.isRoot) {
+        tick();
       }
     }
 
@@ -78,11 +77,11 @@ export function component(options: ComponentOptions): SvComponent {
         return;
       }
 
-      const ref = this.#renderContext.inputs.get(qualifiedName);
+      const inputRef = this.#renderContext.inputs.get(qualifiedName);
 
-      if (ref) {
-        this.#inputs.set(qualifiedName, ref.source);
-        update(ref.source, value);
+      if (inputRef) {
+        this.#inputs.set(qualifiedName, inputRef.source);
+        update(inputRef.source, value);
         return;
       }
 

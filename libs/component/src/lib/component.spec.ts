@@ -25,6 +25,21 @@ describe('component', () => {
     });
   });
 
+  it('throws with uninitialized required inputs', () => {
+    const el = createComponent(() => {
+      const text = input({
+        name: 'text',
+        required: true,
+      });
+
+      return html`${text}`;
+    });
+
+    expect(() => document.documentElement.appendChild(el)).toThrow(
+      'Missing required input "text" for component "test-component"',
+    );
+  });
+
   describe('define', () => {
     it('defines custom element', () => {
       const TestComponent = component({
@@ -37,7 +52,7 @@ describe('component', () => {
       expect(customElements.get('test-component')).toBe(TestComponent);
     });
 
-    it('throws on duplicate component name', () => {
+    it('throws with duplicate component name', () => {
       const TestComponent = component({
         name: 'test-component',
         render: () => html``,
