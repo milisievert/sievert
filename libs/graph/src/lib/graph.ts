@@ -1,79 +1,89 @@
-import type { Source, Sink } from './nodes.js';
+import { type Sink, type Source } from './nodes.js';
+import { GraphPriority } from './priority.js';
 import { ERROR, INIT, PROGRESS } from './symbols.js';
 
 let autoTick = true;
 let currentSink: Sink | null = null;
-const nextTick: Sink[] = [];
-const postTick: (() => void)[] = [];
 
-export async function beforeTick(
-  fn: (() => Promise<unknown>) | (() => unknown),
-) {
+const nextTick = new Set<Sink>();
+const postTick = new Set<() => void>();
+
+export async function beforeTick(fn: (() => Promise<void>) | (() => void)) {
   autoTick = false;
 
   try {
-    return await fn();
-  } finally {
-    tick();
-    autoTick = true;
-
-    let noe: (() => void) | undefined;
-    while ((noe = postTick.pop())) {
-      noe();
-    }
+    await fn();
+  } catch (error) {
+    panic(error);
   }
+
+  tick();
+  autoTick = true;
 }
 
 export function afterNextTick(fn: () => void) {
-  postTick.push(fn);
+  postTick.add(fn);
 }
 
 export function tick(): boolean {
-  if (nextTick.length === 0) {
+  if (currentSink) {
+    panic(new Error('currentSink is not null before tick(), debug time!'));
+  }
+
+  if (nextTick.size === 0) {
+    afterTick();
     return false;
   }
 
-  if (currentSink && nextTick.includes(currentSink)) {
-    reset();
-    throw new Error('Infinite loop');
-  }
+  const prevAutoTick = autoTick;
+  autoTick = false;
 
-  let sink: Sink | undefined;
-  const prev = currentSink;
+  while (nextTick.size > 0) {
+    const currentTick = [...nextTick].sort(
+      (a, b) =>
+        (a.priority ?? GraphPriority.DEFAULT) -
+        (b.priority ?? GraphPriority.DEFAULT),
+    );
 
-  try {
-    while ((sink = nextTick.pop())) {
+    nextTick.clear();
+
+    for (const sink of currentTick) {
       detach(sink);
       currentSink = sink;
-      sink.fn();
+      try {
+        sink.fn();
+      } catch (error) {
+        panic(error);
+      }
+
+      currentSink = null;
     }
-  } catch (error) {
-    if (
-      error instanceof RangeError &&
-      error.message === 'Maximum call stack size exceeded'
-    ) {
-      throw new Error('Infinite loop', { cause: error });
-    }
-    throw error;
-  } finally {
-    currentSink = prev;
   }
+
+  afterTick();
+  autoTick = prevAutoTick;
 
   return true;
 }
 
-function reset() {
-  currentSink = null;
+function afterTick() {
+  for (const fn of postTick) {
+    try {
+      fn();
+    } catch (error) {
+      panic(error);
+    }
 
-  for (let i = 0; i < nextTick.length; i++) {
-    nextTick.pop();
+    if (nextTick.size > 0) {
+      panic(new Error('Graph updates are not supported in afterNextTick'));
+    }
   }
+
+  postTick.clear();
 }
 
 export function enqueue(sink: Sink): void {
-  if (!nextTick.includes(sink)) {
-    nextTick.push(sink);
-  }
+  nextTick.add(sink);
 }
 
 export function detach(sink: Sink): void {
@@ -99,9 +109,9 @@ export function read(source: Source) {
     beforeReadTransform(source);
   } else if (source.value === INIT) {
     source.value = ERROR;
-    throw new Error('Source read before initialization');
+    panic(new Error('Source read before initialization'));
   } else if (source.value === ERROR) {
-    throw new Error('Graph error');
+    panic(new Error('Graph error'));
   }
 
   if (currentSink !== null) {
@@ -140,10 +150,7 @@ export function update(source: Source, value: unknown): void {
 
 function notifySink(sink: Sink): void {
   if (sink.dirty === undefined) {
-    if (!nextTick.includes(sink)) {
-      nextTick.push(sink);
-    }
-    return;
+    return enqueue(sink);
   }
 
   if (sink.dirty === true) {
@@ -160,11 +167,11 @@ function notifySink(sink: Sink): void {
 function beforeReadTransform(transform: Sink & Source): void {
   if (transform.value === PROGRESS) {
     transform.value = ERROR;
-    throw new Error('Infinite loop');
+    panic(new Error('Infinite loop'));
   }
 
   if (transform.value === ERROR) {
-    throw new Error('Graph error');
+    panic(new Error('Graph error'));
   }
 
   if (transform.value === INIT) {
@@ -198,6 +205,14 @@ function updateTransform(transform: Sink & Source): void {
   transform.version++;
 
   currentSink = prev;
+}
+
+function panic(error: unknown) {
+  autoTick = true;
+  currentSink = null;
+  nextTick.clear();
+  postTick.clear();
+  throw error;
 }
 
 function isSource(obj: object): obj is Source {

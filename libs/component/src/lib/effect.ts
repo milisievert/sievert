@@ -1,4 +1,11 @@
-import { beforeTick, detach, enqueue, createSink, tick } from '@sievert/graph';
+import {
+  beforeTick,
+  createSink,
+  detach,
+  enqueue,
+  GraphPriority,
+  tick,
+} from '@sievert/graph';
 import { getContext } from '@sievert/renderer';
 
 type EffectOptions = {
@@ -18,7 +25,7 @@ export function effect(fn: () => void, options?: EffectOptions): EffectRef {
     );
   }
 
-  const node = createSink(() => beforeTick(fn));
+  const node = createSink(() => beforeTick(fn), GraphPriority.LOW);
 
   if (options?.track !== false) {
     context?.sinks.add(node);
