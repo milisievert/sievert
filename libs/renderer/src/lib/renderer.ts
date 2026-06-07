@@ -15,6 +15,7 @@ import type {
 } from '@sievert/parser';
 import { getSource, isSignal } from '@sievert/signals';
 import { type RenderContext } from './context/render-context.js';
+import { isDirective, renderDirective } from '@sievert/directive';
 
 const tagNameBlackList = [
   'html',
@@ -171,6 +172,27 @@ export function render(
     return element;
   };
 
+  const bindAndRenderDirective = (node: ElementNode) => {
+    const matchesKey = node.attributes.some(
+      (attr) => attr.name === 'key' && attr.value === peekKey(),
+    );
+
+    if (!matchesKey) {
+      throw new Error(`Unexpected directive marker`);
+    }
+
+    const directive = nextExpression();
+
+    if (!isDirective(directive)) {
+      throw new Error('Unexpected expression');
+    }
+
+    const result = renderDirective(directive);
+
+    context.sinks.add(result.sink);
+    return result.marker;
+  };
+
   const renderNodes = (parent: Node, children: SvNode[]) => {
     for (const child of children) {
       if (child.type === 'element') {
@@ -178,7 +200,12 @@ export function render(
           console.warn(`Banned tag name "${child.tagName}" skipped`);
           continue;
         }
-        parent.appendChild(renderElement(child));
+
+        if (child.tagName === 'sv-directive') {
+          parent.appendChild(bindAndRenderDirective(child));
+        } else {
+          parent.appendChild(renderElement(child));
+        }
       } else if (child.type === 'text') {
         parent.appendChild(renderText(child));
       } else if (child.type === 'comment') {

@@ -73,10 +73,6 @@ function afterTick() {
     } catch (error) {
       panic(error);
     }
-
-    if (nextTick.size > 0) {
-      panic(new Error('Graph updates are not supported in afterNextTick'));
-    }
   }
 
   postTick.clear();

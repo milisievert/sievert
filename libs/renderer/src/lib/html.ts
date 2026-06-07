@@ -6,20 +6,29 @@ import {
   createContext,
   getContext,
 } from './context/render-context.js';
+import { isDirective } from '@sievert/directive';
 
 export type HtmlResult = {
   documentFragment: DocumentFragment;
   context: RenderContext;
 };
 
-function generateKeys(count: number) {
-  const keys = new Array<string>(count);
+function generatePlaceholders(expressions: unknown[]) {
+  const keys = new Array<string>(expressions.length);
+  const placeholders = new Array<string>(expressions.length);
 
-  for (let i = 0; i < count; i++) {
-    keys[i] = `sv_${randomBase36()}`;
+  for (let i = 0; i < expressions.length; i++) {
+    const key = `sv_${randomBase36()}`;
+    keys[i] = key;
+
+    if (isDirective(expressions[i])) {
+      placeholders[i] = `<sv-directive key="${key}" />`;
+    } else {
+      placeholders[i] = key;
+    }
   }
 
-  return keys;
+  return { keys, placeholders };
 }
 
 export function html(
@@ -27,9 +36,9 @@ export function html(
   ...expressions: unknown[]
 ): HtmlResult {
   const context = getContext() ?? createContext();
+  const { keys, placeholders } = generatePlaceholders(expressions);
 
-  const keys = generateKeys(expressions.length);
-  const nodes = parse(String.raw(parts, ...keys));
+  const nodes = parse(String.raw(parts, ...placeholders));
   const documentFragment = render(nodes, keys, expressions, context);
 
   return { documentFragment, context };

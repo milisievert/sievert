@@ -193,6 +193,7 @@ describe('component', () => {
         return html`${() => JSON.stringify(person())}`;
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       el.setAttribute('person', { name: 'sievert', age: 0 } as any);
 
       expect(el.textContent).toBe('{"name":"sievert","age":0}');
