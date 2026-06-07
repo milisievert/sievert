@@ -6,7 +6,7 @@ import {
   createContext,
   getContext,
 } from './context/render-context.js';
-import { isDirective } from '@sievert/directive'; 
+import { isDirective } from '@sievert/directive';
 
 export type HtmlResult = {
   documentFragment: DocumentFragment;

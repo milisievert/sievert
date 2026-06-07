@@ -1,5 +1,10 @@
 import { directive } from '@sievert/directive';
-import { createSink, createTransform, GraphPriority, read } from '@sievert/graph';
+import {
+  createSink,
+  createTransform,
+  GraphPriority,
+  read,
+} from '@sievert/graph';
 import type { HtmlResult } from '@sievert/renderer';
 import { getSource, isSignal } from '@sievert/signals';
 import {
