@@ -1,9 +1,16 @@
-import { afterNextTick, type Source, tick, update } from '@sievert/graph';
 import {
-  type HtmlResult,
+  createSink,
+  enqueue,
+  GraphPriority,
+  type Source,
+  tick,
+  update,
+} from '@sievert/graph';
+import {
   activate,
   createContext,
   deactivate,
+  type HtmlResult,
   withContext,
 } from '@sievert/renderer';
 
@@ -45,15 +52,20 @@ export function component(options: ComponentOptions): SvComponent {
         const result = withContext(this.#renderContext, () => options.render());
         this.appendChild(result.documentFragment);
 
-        afterNextTick(() => {
-          for (const [name, ref] of this.#renderContext.inputs) {
-            if (ref.required && !this.#inputs.has(name)) {
-              throw new Error(
-                `Missing required input "${name}" for component "${options.name}"`,
-              );
-            }
-          }
-        });
+        enqueue(
+          createSink(
+            () => {
+              for (const [name, ref] of this.#renderContext.inputs) {
+                if (ref.required && !this.#inputs.has(name)) {
+                  throw new Error(
+                    `Missing required input "${name}" for component "${options.name}"`,
+                  );
+                }
+              }
+            },
+            { priority: GraphPriority.LOW },
+          ),
+        );
 
         this.#isInitialized = true;
       }

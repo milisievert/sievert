@@ -5,7 +5,6 @@ import {
   createTransform,
   detach,
   enqueue,
-  GraphPriority,
   read,
   type Source,
 } from '@sievert/graph';
@@ -82,7 +81,7 @@ export const each = directive({
       for (const ctx of contextsToRender) {
         renderedContexts.add(ctx);
       }
-    }, GraphPriority.DEFAULT);
+    });
   },
 });
 
