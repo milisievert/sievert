@@ -220,6 +220,30 @@
       "subject": "feat(core): directive (#56)"
     },
     "targetVersion": "latest",
-    "confirmedPackageUpdates": true
+    "confirmedPackageUpdates": true,
+    "runningMigrations": [
+      "22-7-0-add-self-healing-to-gitignore"
+    ],
+    "completedMigrations": {
+      "22-7-0-add-polygraph-to-git-ignore": {
+        "type": "successful",
+        "name": "22-7-0-add-polygraph-to-git-ignore",
+        "changedFiles": [],
+        "ref": "104b2162211b77625d82fa9eb18cb7a87e350789",
+        "nextSteps": []
+      },
+      "22-7-0-add-self-healing-to-gitignore": {
+        "type": "successful",
+        "name": "22-7-0-add-self-healing-to-gitignore",
+        "changedFiles": [
+          {
+            "path": ".prettierignore",
+            "type": "UPDATE"
+          }
+        ],
+        "ref": "af359fa8c3d3f9ab203d646b2998d76873ef09fa",
+        "nextSteps": []
+      }
+    }
   }
 }
