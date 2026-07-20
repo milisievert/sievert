@@ -1,10 +1,5 @@
 import { directive } from '@sievert/directive';
-import {
-  createSink,
-  createTransform,
-  GraphPriority,
-  read,
-} from '@sievert/graph';
+import { createSink, createTransform, read } from '@sievert/graph';
 import type { HtmlResult } from '@sievert/renderer';
 import { getSource, isSignal } from '@sievert/signals';
 import {
@@ -27,55 +22,46 @@ export const match = directive({
     const contexts = new Map<unknown, MatchContext>();
     let currentContext: MatchContext | undefined;
 
-    const observer = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        if (mutation.type === 'childList') {
-          if ([...mutation.removedNodes].includes(marker)) {
-            observer.disconnect();
+    return createSink(
+      () => {
+        const key = read(value);
 
-            if (currentContext) {
-              unmount(currentContext);
-            }
-          }
+        if (currentContext) {
+          unmount(currentContext);
+          currentContext = undefined;
         }
-      }
-    });
 
-    return createSink(() => {
-      if (!marker.parentElement) {
-        console.log('[match] no parent element for marker, abort sink');
-        return;
-      }
+        let render: (() => HtmlResult) | undefined;
 
-      const key = read(value);
+        if (contexts.has(key)) {
+          currentContext = contexts.get(key);
+        } else if ((render = cases.get(key))) {
+          currentContext = createMatchContext(render);
+          contexts.set(key, currentContext);
+        } else if (contexts.has(DEFAULT)) {
+          currentContext = contexts.get(DEFAULT);
+        } else if ((render = cases.get(DEFAULT))) {
+          currentContext = createMatchContext(render);
+          contexts.set(DEFAULT, currentContext);
+        }
 
-      if (currentContext) {
-        unmount(currentContext);
-        currentContext = undefined;
-      }
-
-      let render: (() => HtmlResult) | undefined;
-
-      if (contexts.has(key)) {
-        currentContext = contexts.get(key);
-      } else if ((render = cases.get(key))) {
-        currentContext = createMatchContext(render);
-        contexts.set(key, currentContext);
-      } else if (contexts.has(DEFAULT)) {
-        currentContext = contexts.get(DEFAULT);
-      } else if ((render = cases.get(DEFAULT))) {
-        currentContext = createMatchContext(render);
-        contexts.set(DEFAULT, currentContext);
-      }
-
-      if (currentContext) {
-        mount(currentContext, marker);
-        observer.observe(marker.parentElement, { childList: true });
-      }
-    }, GraphPriority.DEFAULT);
+        if (currentContext) {
+          mount(currentContext, marker);
+        }
+      },
+      {
+        cleanup: () => {
+          if (currentContext) {
+            unmount(currentContext);
+            currentContext = undefined;
+          }
+        },
+      },
+    );
   },
 });
 
 export const on = <T>(value: T, render: () => HtmlResult) =>
   [value, render] as const;
+
 export const noMatch = (render: () => HtmlResult) => [DEFAULT, render] as const;

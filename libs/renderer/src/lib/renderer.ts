@@ -53,9 +53,10 @@ export function render(
       : createTransform(expression as () => unknown);
 
     context.sinks.add(
-      createSink(() => {
-        element.setAttribute(attr.name, read(sourceNode) as string);
-      }, GraphPriority.HIGH),
+      createSink(
+        () => element.setAttribute(attr.name, read(sourceNode) as string),
+        { priority: GraphPriority.HIGH },
+      ),
     );
   };
 
@@ -98,7 +99,7 @@ export function render(
         }
 
         text.textContent = dynamicContent;
-      }, GraphPriority.DEFAULT),
+      }),
     );
   };
 

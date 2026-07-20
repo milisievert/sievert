@@ -5,7 +5,7 @@ type SignalSetter<T> = (value: T) => void;
 type SignalUpdater<T> = (fn: (value: T) => T) => void;
 type SignalConverter<T> = () => Signal<T>;
 
-export type Signal<T> = SignalGetter<T> &
+export type Signal<T = unknown> = SignalGetter<T> &
   Readonly<{
     [SIGNAL]: Source;
   }>;

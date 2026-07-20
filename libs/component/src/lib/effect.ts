@@ -25,7 +25,9 @@ export function effect(fn: () => void, options?: EffectOptions): EffectRef {
     );
   }
 
-  const node = createSink(() => beforeTick(fn), GraphPriority.LOW);
+  const node = createSink(() => beforeTick(fn), {
+    priority: GraphPriority.LOW,
+  });
 
   if (options?.track !== false) {
     context?.sinks.add(node);

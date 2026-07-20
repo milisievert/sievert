@@ -1,38 +1,67 @@
 import { type Sink, type Source } from './nodes.js';
 import { GraphPriority } from './priority.js';
+import { SinkMode } from './sink-mode.js';
 import { ERROR, INIT, PROGRESS } from './symbols.js';
 
 let autoTick = true;
 let currentSink: Sink | null = null;
-
 const nextTick = new Set<Sink>();
-const postTick = new Set<() => void>();
 
-export async function beforeTick(fn: (() => Promise<void>) | (() => void)) {
-  autoTick = false;
+function checkStaleSink(sink: Sink) {
+  let stale =
+    sink.mode === SinkMode.EAGER || (sink.dirty ?? sink.sources.size === 0);
+
+  for (const source of sink.sources) {
+    if (sink.sourceVersions.get(source) !== source.version) {
+      stale = true;
+    }
+
+    if (isSink(source) && checkStaleTransform(source)) {
+      stale = true;
+    }
+  }
+
+  return stale;
+}
+
+function checkStaleTransform(transform: Sink & Source): boolean {
+  if (!checkStaleSink(transform)) {
+    return false;
+  }
+
+  detach(transform);
+  transform.sources.clear();
+  transform.sourceVersions.clear();
+
+  const prevValue = transform.value;
+  const prevSink = currentSink;
+  currentSink = transform;
 
   try {
-    await fn();
+    transform.value = transform.fn();
   } catch (error) {
+    transform.value = ERROR;
     panic(error);
   }
 
-  tick();
-  autoTick = true;
+  transform.dirty = false;
+  currentSink = prevSink;
+
+  if (transform.value === prevValue) {
+    return false;
+  }
+
+  transform.version++;
+  return true;
 }
 
-export function afterNextTick(fn: () => void) {
-  postTick.add(fn);
-}
-
-export function tick(): boolean {
+export function tick() {
   if (currentSink) {
     panic(new Error('currentSink is not null before tick(), debug time!'));
   }
 
   if (nextTick.size === 0) {
-    afterTick();
-    return false;
+    return;
   }
 
   const prevAutoTick = autoTick;
@@ -48,80 +77,86 @@ export function tick(): boolean {
     nextTick.clear();
 
     for (const sink of currentTick) {
+      if (!checkStaleSink(sink)) {
+        continue;
+      }
+
       detach(sink);
+      sink.sources.clear();
+      sink.sourceVersions?.clear();
       currentSink = sink;
+
       try {
         sink.fn();
       } catch (error) {
         panic(error);
       }
-
-      currentSink = null;
     }
   }
 
-  afterTick();
+  currentSink = null;
   autoTick = prevAutoTick;
-
-  return true;
 }
 
-function afterTick() {
-  for (const fn of postTick) {
-    try {
-      fn();
-    } catch (error) {
-      panic(error);
-    }
+export async function beforeTick(fn: (() => Promise<void>) | (() => void)) {
+  autoTick = false;
+
+  try {
+    await fn();
+  } catch (error) {
+    panic(error);
   }
 
-  postTick.clear();
+  tick();
+  autoTick = true;
 }
 
 export function enqueue(sink: Sink): void {
   nextTick.add(sink);
 }
 
-export function detach(sink: Sink): void {
-  let source: Source | undefined;
+export function detach(sink: Sink) {
+  for (const source of sink.sources) {
+    source.sinks.delete(sink);
 
-  while ((source = sink.sources.pop())) {
-    const i = source.sinks.indexOf(sink);
-
-    if (i !== -1) {
-      source.sinks.splice(i, 1);
-
-      if (source.sinks.length === 0 && isSink(source)) {
-        detach(source);
-      }
+    if (isSink(source) && source.sinks.size === 0) {
+      detach(source);
     }
+  }
 
-    sink.sourceVersions?.pop();
+  if (sink.cleanup) {
+    sink.cleanup();
   }
 }
 
 export function read(source: Source) {
-  if (isSink(source)) {
-    beforeReadTransform(source);
-  } else if (source.value === INIT) {
+  if (source.value === INIT) {
+    if (isSink(source)) {
+      initTransform(source);
+    } else {
+      panic(new Error('Source read before initialization'));
+    }
+  } else if (source.value === PROGRESS) {
     source.value = ERROR;
-    panic(new Error('Source read before initialization'));
+    panic(new Error('Infinite loop'));
   } else if (source.value === ERROR) {
     panic(new Error('Graph error'));
   }
 
+  if (autoTick && isSink(source)) {
+    checkStaleTransform(source);
+  }
+
   if (currentSink !== null) {
-    if (!currentSink.sources.includes(source)) {
-      currentSink.sources.push(source);
-      currentSink.sourceVersions?.push(source.version);
-    } else if (currentSink.sourceVersions) {
-      currentSink.sourceVersions[currentSink.sources.indexOf(source)] =
-        source.version;
+    if (!currentSink.sources.has(source)) {
+      currentSink.sources.add(source);
     }
 
-    if (!source.sinks.includes(currentSink)) {
-      source.sinks.push(currentSink);
+    if (!source.sinks.has(currentSink)) {
+      source.sinks.add(currentSink);
     }
+
+    currentSink.sourceVersions.set(source, source.version);
   }
 
   return source.value;
@@ -134,10 +169,7 @@ export function update(source: Source, value: unknown): void {
 
   source.value = value;
   source.version++;
-
-  if (source.sinks.length > 0) {
-    source.sinks.forEach(notifySink);
-  }
+  source.sinks.forEach(notifySink);
 
   if (autoTick) {
     tick();
@@ -147,67 +179,35 @@ export function update(source: Source, value: unknown): void {
 function notifySink(sink: Sink): void {
   if (sink.dirty === undefined) {
     return enqueue(sink);
-  }
-
-  if (sink.dirty === true) {
+  } else if (sink.dirty === true) {
     return;
   }
 
   sink.dirty = true;
 
-  if (isSource(sink) && sink.sinks.length > 0) {
+  if (isSource(sink)) {
     sink.sinks.forEach(notifySink);
-  }
-}
-
-function beforeReadTransform(transform: Sink & Source): void {
-  if (transform.value === PROGRESS) {
-    transform.value = ERROR;
-    panic(new Error('Infinite loop'));
-  }
-
-  if (transform.value === ERROR) {
-    panic(new Error('Graph error'));
-  }
-
-  if (transform.value === INIT) {
-    initTransform(transform);
-  } else if (
-    transform.dirty === true ||
-    transform.sourceVersions?.some((v, i) => transform.sources[i].version > v)
-  ) {
-    detach(transform);
-    updateTransform(transform);
   }
 }
 
 function initTransform(transform: Sink & Source): void {
   const prev = currentSink;
   currentSink = transform;
-
   transform.value = PROGRESS;
-  transform.value = transform.fn();
 
-  currentSink = prev;
-}
-
-function updateTransform(transform: Sink & Source): void {
-  const prev = currentSink;
-  currentSink = transform;
-
-  transform.value = PROGRESS;
-  transform.value = transform.fn();
-  transform.dirty = false;
-  transform.version++;
-
-  currentSink = prev;
+  try {
+    transform.value = transform.fn();
+    currentSink = prev;
+  } catch (error) {
+    transform.value = ERROR;
+    panic(error);
+  }
 }
 
 function panic(error: unknown) {
   autoTick = true;
   currentSink = null;
   nextTick.clear();
-  postTick.clear();
   throw error;
 }
 
@@ -215,7 +215,7 @@ function isSource(obj: object): obj is Source {
   return (
     'value' in obj &&
     'sinks' in obj &&
-    Array.isArray(obj.sinks) &&
+    obj.sinks instanceof Set &&
     'version' in obj &&
     typeof obj.version === 'number'
   );
@@ -226,6 +226,8 @@ function isSink(obj: object): obj is Sink {
     'fn' in obj &&
     typeof obj.fn === 'function' &&
     'sources' in obj &&
-    Array.isArray(obj.sources)
+    obj.sources instanceof Set &&
+    'sourceVersions' in obj &&
+    obj.sourceVersions instanceof Map
   );
 }
