@@ -1,4 +1,4 @@
-import { createSink, GraphPriority } from '@sievert/graph';
+import { createSink } from '@sievert/graph';
 import { directive, isDirective } from './directive.js';
 
 describe('directive', () => {
@@ -6,7 +6,7 @@ describe('directive', () => {
     it('returns true for directives', () => {
       const dir = directive({
         param: () => ({}),
-        handler: () => createSink(() => ({}), GraphPriority.DEFAULT),
+        handler: () => createSink(() => ({})),
       });
 
       expect(isDirective(dir())).toBe(true);

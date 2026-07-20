@@ -1,34 +1,12 @@
 import { vi } from 'vitest';
-import {
-  afterNextTick,
-  beforeTick,
-  detach,
-  enqueue,
-  read,
-  tick,
-  update,
-} from './graph.js';
+import { beforeTick, detach, enqueue, read, tick, update } from './graph.js';
 import { createSink, createSource, createTransform } from './nodes.js';
 import { GraphPriority } from './priority.js';
 
 describe('graph', () => {
   describe('tick', () => {
-    it('returns false when queue is empty', () => {
-      const result = tick();
-
-      expect(result).toBe(false);
-    });
-
-    it('returns true when queue is not empty', () => {
-      enqueue(createSink(() => 'test', GraphPriority.DEFAULT));
-
-      const result = tick();
-
-      expect(result).toBe(true);
-    });
-
     it('triggers enqueued sink node', () => {
-      const sink = createSink(() => 'test', GraphPriority.DEFAULT);
+      const sink = createSink(() => 'test');
       const spy = vi.spyOn(sink, 'fn');
 
       enqueue(sink);
@@ -42,9 +20,9 @@ describe('graph', () => {
       const highPriorityFn = vi.fn();
       const defaultPriorityFn = vi.fn();
 
-      enqueue(createSink(lowPriorityFn, GraphPriority.LOW));
-      enqueue(createSink(highPriorityFn, GraphPriority.HIGH));
-      enqueue(createSink(defaultPriorityFn, GraphPriority.DEFAULT));
+      enqueue(createSink(lowPriorityFn, { priority: GraphPriority.LOW }));
+      enqueue(createSink(highPriorityFn, { priority: GraphPriority.HIGH }));
+      enqueue(createSink(defaultPriorityFn));
 
       tick();
 
@@ -65,67 +43,13 @@ describe('graph', () => {
 
       const abortedFn = vi.fn();
 
-      enqueue(createSink(throwingFn, GraphPriority.HIGH));
-      enqueue(createSink(abortedFn, GraphPriority.DEFAULT));
+      enqueue(createSink(throwingFn, { priority: GraphPriority.HIGH }));
+      enqueue(createSink(abortedFn));
 
       expect(() => tick()).toThrow('Error!');
-      expect(tick()).toBe(false);
+      expect(() => tick()).not.toThrow();
 
-      expect(throwingFn).toHaveBeenCalled();
-      expect(abortedFn).not.toHaveBeenCalled();
-    });
-
-    it('runs post tick callbacks after sinks', () => {
-      const sinkFn = vi.fn();
-      const postTickFn = vi.fn();
-
-      enqueue(createSink(sinkFn, GraphPriority.DEFAULT));
-      afterNextTick(postTickFn);
-
-      tick();
-
-      const sinkOrder = sinkFn.mock.invocationCallOrder[0];
-      const postTickOrder = postTickFn.mock.invocationCallOrder[0];
-
-      expect(postTickFn).toHaveBeenCalledOnce();
-      expect(postTickOrder).toBeGreaterThan(sinkOrder);
-    });
-
-    it('always runs post tick callbacks', () => {
-      const postTickFn = vi.fn();
-
-      afterNextTick(postTickFn);
-
-      expect(tick()).toBe(false);
-      expect(postTickFn).toHaveBeenCalled();
-    });
-
-    it('cleans up post tick state', () => {
-      const postTickFn = vi.fn();
-
-      afterNextTick(postTickFn);
-
-      tick();
-      tick();
-
-      expect(postTickFn).toHaveBeenCalledOnce();
-    });
-
-    it('aborts and resets graph state on error in post tick callback', () => {
-      const throwingFn = vi.fn(() => {
-        throw new Error('Error!');
-      });
-
-      const abortedFn = vi.fn();
-
-      afterNextTick(throwingFn);
-      afterNextTick(abortedFn);
-
-      expect(() => tick()).toThrow('Error!');
-
-      tick();
-
-      expect(throwingFn).toHaveBeenCalled();
+      expect(throwingFn).toHaveBeenCalledOnce();
       expect(abortedFn).not.toHaveBeenCalled();
     });
 
@@ -134,17 +58,9 @@ describe('graph', () => {
       const source2 = createSource('');
       const source3 = createSource('');
 
-      const sink1 = createSink(() => {
-        update(source2, read(source1));
-      }, GraphPriority.DEFAULT);
-
-      const sink2 = createSink(() => {
-        update(source3, read(source2));
-      }, GraphPriority.DEFAULT);
-
-      const sink3 = createSink(() => {
-        read(source2);
-      }, GraphPriority.DEFAULT);
+      const sink1 = createSink(() => update(source2, read(source1)));
+      const sink2 = createSink(() => update(source3, read(source2)));
+      const sink3 = createSink(() => read(source2));
 
       enqueue(sink1);
       enqueue(sink2);
@@ -161,7 +77,7 @@ describe('graph', () => {
 
   describe('enqueue', () => {
     it('skips duplicate sink nodes', () => {
-      const sink = createSink(() => 'test', GraphPriority.DEFAULT);
+      const sink = createSink(() => 'test');
       const spy = vi.spyOn(sink, 'fn');
 
       enqueue(sink);
@@ -175,29 +91,26 @@ describe('graph', () => {
   describe('detach', () => {
     it('detaches sink nodes', () => {
       const source = createSource('test');
-      const sink = createSink(() => read(source), GraphPriority.DEFAULT);
+      const sink = createSink(() => read(source));
 
       enqueue(sink);
       tick();
       detach(sink);
 
-      expect(source.sinks.length).toBe(0);
-      expect(sink.sources.length).toBe(0);
-      expect(sink.sourceVersions?.length).toBeFalsy();
+      expect(source.sinks.size).toBe(0);
     });
 
-    it('propagates up graph', () => {
+    it('propagates', () => {
       const source = createSource('test');
       const transform = createTransform(() => read(source));
-      const sink = createSink(() => read(transform), GraphPriority.DEFAULT);
+      const sink = createSink(() => read(transform));
 
       enqueue(sink);
       tick();
       detach(sink);
 
-      expect(source.sinks.length).toBe(0);
-      expect(transform.sources.length).toBe(0);
-      expect(transform.sourceVersions?.length).toBeFalsy();
+      expect(source.sinks.size).toBe(0);
+      expect(transform.sinks.size).toBe(0);
     });
   });
 
@@ -228,10 +141,10 @@ describe('graph', () => {
 
       read(transform);
 
-      expect(source.sinks.length).toBe(1);
-      expect(source.sinks[0]).toBe(transform);
-      expect(transform.sources.length).toBe(1);
-      expect(transform.sources[0]).toBe(source);
+      expect(source.sinks.size).toBe(1);
+      expect(source.sinks.has(transform)).toBe(true);
+      expect(transform.sources.size).toBe(1);
+      expect(transform.sources.has(source)).toBe(true);
     });
 
     it('connects nodes conditionally', () => {
@@ -242,20 +155,20 @@ describe('graph', () => {
         if (read(source1)) {
           read(source2);
         }
-      }, GraphPriority.DEFAULT);
+      });
 
       enqueue(sink);
       tick();
 
-      expect(sink.sources.length).toBe(2);
-      expect(source1.sinks.length).toBe(1);
-      expect(source2.sinks.length).toBe(1);
+      expect(sink.sources.size).toBe(2);
+      expect(source1.sinks.size).toBe(1);
+      expect(source2.sinks.size).toBe(1);
 
       update(source1, false);
 
-      expect(sink.sources.length).toBe(1);
-      expect(source1.sinks.length).toBe(1);
-      expect(source2.sinks.length).toBe(0);
+      expect(sink.sources.size).toBe(1);
+      expect(source1.sinks.size).toBe(1);
+      expect(source2.sinks.size).toBe(0);
     });
 
     it('should return updated value', () => {
@@ -305,7 +218,7 @@ describe('graph', () => {
 
     it('should run dependant sink nodes', () => {
       const source = createSource('test');
-      const sink = createSink(() => read(source), GraphPriority.DEFAULT);
+      const sink = createSink(() => read(source));
       const sinkSpy = vi.spyOn(sink, 'fn');
 
       enqueue(sink);
@@ -331,7 +244,7 @@ describe('graph', () => {
 
     it('should run dependant sink nodes on update', async () => {
       const source = createSource('test');
-      const sink = createSink(() => read(source), GraphPriority.DEFAULT);
+      const sink = createSink(() => read(source));
       const sinkSpy = vi.spyOn(sink, 'fn');
 
       enqueue(sink);
