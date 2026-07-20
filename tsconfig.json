@@ -27,5 +27,8 @@
     {
       "path": "./libs/directive"
     }
-  ]
+  ],
+  "compilerOptions": {
+    "ignoreDeprecations": "6.0"
+  }
 }
