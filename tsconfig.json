@@ -26,6 +26,9 @@
     },
     {
       "path": "./libs/directive"
+    },
+    {
+      "path": "./libs/router"
     }
   ],
   "compilerOptions": {
