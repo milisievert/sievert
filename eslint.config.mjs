@@ -43,6 +43,10 @@ export default [
               scope: 'core',
               allowedScopes: [],
             }),
+            ...scopeRule({
+              scope: 'app',
+              allowedScopes: ['core'],
+            }),
           ],
         },
       ],

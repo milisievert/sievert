@@ -5,7 +5,8 @@
   "dependencies": {
     "@sievert/component": "workspace:*",
     "@sievert/renderer": "workspace:*",
-    "@sievert/signals": "workspace:*"
+    "@sievert/signals": "workspace:*",
+    "@sievert/router": "workspace:*"
   },
   "nx": {
     "tags": ["scope:all"],

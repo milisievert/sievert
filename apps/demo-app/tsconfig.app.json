@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "dist",
-    "types": ["node"],
+    "types": [],
     "rootDir": "src",
     "module": "esnext",
     "moduleResolution": "bundler",
@@ -20,6 +20,9 @@
   ],
   "include": ["src/**/*.ts"],
   "references": [
+    {
+      "path": "../../libs/router/tsconfig.lib.json"
+    },
     {
       "path": "../../libs/signals/tsconfig.lib.json"
     },
