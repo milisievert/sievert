@@ -1,1 +1,7 @@
-export { router, type RouteConfig } from './lib/routes.js';
+export {
+  compile,
+  match,
+  type Route,
+  type CompiledRoute,
+  type RouteMatch,
+} from './lib/routes.js';
