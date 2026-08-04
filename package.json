@@ -54,5 +54,9 @@
       }
     }
   },
-  "packageManager": "pnpm@11.18.0"
+  "packageManager": "pnpm@11.18.0",
+  "engines": {
+    "node": "^22.12.0 || 24.x || 26.x"
+  },
+  "engineStrict": true
 }
