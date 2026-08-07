@@ -29,6 +29,9 @@
     },
     {
       "path": "./libs/router"
+    },
+    {
+      "path": "./libs/di"
     }
   ],
   "compilerOptions": {
