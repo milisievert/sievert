@@ -28,7 +28,6 @@ export const DemoPage = component({
       count.set(event.detail);
     };
 
-
     return html`
       <h1>Demo Page</h1>
 

@@ -54,7 +54,6 @@ export function component(options: ComponentOptions): SvComponent {
         const result = withScope(this.#diScope, () =>
           withContext(this.#renderContext, () => options.render()),
         );
-        
         this.appendChild(result.documentFragment);
 
         enqueue(

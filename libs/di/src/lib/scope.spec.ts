@@ -82,7 +82,9 @@ describe('scope', () => {
       const scope = createScope();
       const TEST_VALUE = token('test-value');
 
-      const result = withScope(scope, () => inject(TEST_VALUE, { optional: true }));
+      const result = withScope(scope, () =>
+        inject(TEST_VALUE, { optional: true }),
+      );
 
       expect(result).toBe(null);
     });
@@ -91,9 +93,9 @@ describe('scope', () => {
       const scope = createScope();
       const TEST_VALUE = token('test-value');
 
-      expect(() =>
-        withScope(scope, () => inject(TEST_VALUE)),
-      ).toThrow('No provider for test-value');
+      expect(() => withScope(scope, () => inject(TEST_VALUE))).toThrow(
+        'No provider for test-value',
+      );
     });
 
     it('returns provided value', () => {
