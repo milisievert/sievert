@@ -8,6 +8,7 @@ import {
   unmount,
   type MatchContext,
 } from './match-context.js';
+import { createScope } from '@sievert/di';
 
 type MatchCase<T> = readonly [T | typeof DEFAULT, () => HtmlResult];
 
@@ -19,6 +20,7 @@ export const match = directive({
     cases: new Map<unknown, () => HtmlResult>(cases),
   }),
   handler: ({ value, cases, marker }) => {
+    const diScope = createScope();
     const contexts = new Map<unknown, MatchContext>();
     let currentContext: MatchContext | undefined;
 
@@ -36,12 +38,12 @@ export const match = directive({
         if (contexts.has(key)) {
           currentContext = contexts.get(key);
         } else if ((render = cases.get(key))) {
-          currentContext = createMatchContext(render);
+          currentContext = createMatchContext(render, diScope);
           contexts.set(key, currentContext);
         } else if (contexts.has(DEFAULT)) {
           currentContext = contexts.get(DEFAULT);
         } else if ((render = cases.get(DEFAULT))) {
-          currentContext = createMatchContext(render);
+          currentContext = createMatchContext(render, diScope);
           contexts.set(DEFAULT, currentContext);
         }
 

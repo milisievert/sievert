@@ -1,3 +1,4 @@
+import { createScope, withScope } from '@sievert/di';
 import { directive } from '@sievert/directive';
 import {
   createSink,
@@ -39,6 +40,7 @@ export const each = directive({
     trackBy: options.trackBy,
   }),
   handler: ({ items, render, trackBy, marker }) => {
+    const diScope = createScope();
     const contexts = new Map<unknown, EachContext>();
     const renderedContexts = new Set<EachContext>();
 
@@ -54,8 +56,8 @@ export const each = directive({
         if (!context) {
           const source = createSource(item);
 
-          const result = withContext(createContext(), () =>
-            render(createSignal(source)),
+          const result = withScope(diScope, () =>
+            withContext(createContext(), () => render(createSignal(source))),
           );
 
           context = {

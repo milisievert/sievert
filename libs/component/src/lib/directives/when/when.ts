@@ -9,6 +9,7 @@ import {
   type Truthy,
   type WhenContext,
 } from './when-context.js';
+import { createScope } from '@sievert/di';
 
 export const when = directive({
   param: <T>(
@@ -21,6 +22,7 @@ export const when = directive({
     render,
   }),
   handler: ({ condition, render, marker }) => {
+    const diScope = createScope();
     let context: WhenContext | undefined;
 
     return createSink(
@@ -32,7 +34,7 @@ export const when = directive({
 
         if (read(condition)) {
           if (!context) {
-            context = createWhenContext(condition, render);
+            context = createWhenContext(condition, render, diScope);
           }
 
           mount(context, marker);

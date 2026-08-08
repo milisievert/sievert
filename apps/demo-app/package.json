@@ -6,7 +6,8 @@
     "@sievert/component": "workspace:*",
     "@sievert/renderer": "workspace:*",
     "@sievert/signals": "workspace:*",
-    "@sievert/router": "workspace:*"
+    "@sievert/router": "workspace:*",
+    "@sievert/di": "workspace:*"
   },
   "nx": {
     "tags": ["scope:all"],

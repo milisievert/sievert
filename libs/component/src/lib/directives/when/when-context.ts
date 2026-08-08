@@ -1,3 +1,4 @@
+import { withScope, type Scope } from '@sievert/di';
 import { detach, enqueue, type Source } from '@sievert/graph';
 import {
   createContext,
@@ -17,9 +18,10 @@ export type WhenContext = {
 export function createWhenContext<T>(
   condition: Source,
   render: (value: Signal<Truthy<T>>) => HtmlResult,
+  diScope: Scope,
 ) {
-  const result = withContext(createContext(), () =>
-    render(createSignal(condition)),
+  const result = withScope(diScope, () =>
+    withContext(createContext(), () => render(createSignal(condition))),
   );
 
   if (result.context.inputs.size > 0) {
