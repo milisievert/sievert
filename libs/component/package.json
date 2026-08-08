@@ -24,6 +24,7 @@
     "@sievert/renderer": "workspace:*",
     "@sievert/graph": "workspace:*",
     "@sievert/signals": "workspace:*",
-    "@sievert/directive": "workspace:*"
+    "@sievert/directive": "workspace:*",
+    "@sievert/di": "workspace:*"
   }
 }

@@ -1,3 +1,4 @@
+import { createScope, withScope } from '@sievert/di';
 import {
   createSink,
   enqueue,
@@ -28,6 +29,7 @@ export function component(options: ComponentOptions): SvComponent {
   const SvComponent = class extends HTMLElement {
     static #isDefined = false;
 
+    #diScope = createScope();
     #renderContext = createContext();
     #inputs = new Map<string, Source>();
     #isInitialized = false;
@@ -49,7 +51,9 @@ export function component(options: ComponentOptions): SvComponent {
 
     connectedCallback() {
       if (!this.#isInitialized) {
-        const result = withContext(this.#renderContext, () => options.render());
+        const result = withScope(this.#diScope, () =>
+          withContext(this.#renderContext, () => options.render()),
+        );
         this.appendChild(result.documentFragment);
 
         enqueue(

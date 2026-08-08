@@ -1,3 +1,4 @@
+import { withScope, type Scope } from '@sievert/di';
 import { detach, enqueue } from '@sievert/graph';
 import {
   createContext,
@@ -11,8 +12,8 @@ export type MatchContext = {
   nodes: ChildNode[];
 };
 
-export function createMatchContext(render: () => HtmlResult) {
-  const result = withContext(createContext(), render);
+export function createMatchContext(render: () => HtmlResult, diScope: Scope) {
+  const result = withScope(diScope, () => withContext(createContext(), render));
 
   if (result.context.inputs.size > 0) {
     throw new Error('input() called outside component context');

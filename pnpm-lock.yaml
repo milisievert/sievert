@@ -116,6 +116,9 @@ importers:
       '@sievert/component':
         specifier: workspace:*
         version: link:../../libs/component
+      '@sievert/di':
+        specifier: workspace:*
+        version: link:../../libs/di
       '@sievert/renderer':
         specifier: workspace:*
         version: link:../../libs/renderer
@@ -128,6 +131,9 @@ importers:
 
   libs/component:
     dependencies:
+      '@sievert/di':
+        specifier: workspace:*
+        version: link:../di
       '@sievert/directive':
         specifier: workspace:*
         version: link:../directive

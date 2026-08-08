@@ -1,9 +1,11 @@
 import { component, when } from '@sievert/component';
+import { provide } from '@sievert/di';
 import { html } from '@sievert/renderer';
 import { signal } from '@sievert/signals';
 import { Counter } from './counter';
 import { EachDemo } from './each-demo';
 import { MatchDemo } from './match-demo';
+import { ConsoleLogger } from './logger';
 
 Counter.define();
 MatchDemo.define();
@@ -12,6 +14,8 @@ EachDemo.define();
 export const DemoPage = component({
   name: 'sv-demo-page',
   render: () => {
+    provide(ConsoleLogger);
+
     const count = signal(0);
     const showCounter = signal(true);
 

@@ -22,7 +22,7 @@ export function createScope() {
   return scope;
 }
 
-export function withScope(scope: Scope, fn: () => unknown) {
+export function withScope<T>(scope: Scope, fn: () => T) {
   const prev = current;
   current = scope;
   const result = fn();
@@ -30,9 +30,9 @@ export function withScope(scope: Scope, fn: () => unknown) {
   return result;
 }
 
-export function provide(
-  token: DiToken,
-  options?: { lifetime?: Lifetime; factory?: () => unknown },
+export function provide<T>(
+  token: DiToken<T>,
+  options?: { lifetime?: Lifetime; factory?: () => NoInfer<T> },
 ): void {
   if (!current) {
     throw new Error('provide() called outside DI scope');
@@ -68,10 +68,10 @@ export function inject<T>(
   const provider = current.providers.get(getKey(token));
 
   if (!provider) {
-    if (options?.optional === false) {
-      throw new Error(`No provider for ${getName(token)}`);
+    if (options?.optional === true) {
+      return null;
     }
-    return null;
+    throw new Error(`No provider for ${getName(token)}`);
   }
 
   if (provider.lifetime === 'transient') {

@@ -1,9 +1,13 @@
 import { component, effect, input, output } from '@sievert/component';
+import { inject } from '@sievert/di';
 import { html } from '@sievert/renderer';
+import { ConsoleLogger } from './logger';
 
 export const Counter = component({
   name: 'sv-counter',
   render: () => {
+    const logger = inject(ConsoleLogger);
+
     const count = input<number>({
       name: 'count',
       required: true,
@@ -16,6 +20,8 @@ export const Counter = component({
     effect(() => {
       console.log(`Count updated: ${count()}`);
     });
+
+    logger.log('hello from counter');
 
     return html`
       <div
