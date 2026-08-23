@@ -1,4 +1,4 @@
-import { createScope, withScope } from '@sievert/di';
+import { createScope, useScope } from '@sievert/di';
 import {
   createSink,
   enqueue,
@@ -12,7 +12,7 @@ import {
   createContext,
   deactivate,
   type HtmlResult,
-  withContext,
+  useContext,
 } from '@sievert/renderer';
 
 type ComponentOptions = {
@@ -51,10 +51,11 @@ export function component(options: ComponentOptions): SvComponent {
 
     connectedCallback() {
       if (!this.#isInitialized) {
-        const result = withScope(this.#diScope, () =>
-          withContext(this.#renderContext, () => options.render()),
-        );
-        this.appendChild(result.documentFragment);
+        using _ = useScope(this.#diScope);
+        using __ = useContext(this.#renderContext);
+
+        const { documentFragment } = options.render();
+        this.appendChild(documentFragment);
 
         enqueue(
           createSink(

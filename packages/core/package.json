@@ -39,8 +39,10 @@
     }
   },
   "dependencies": {
-    "@sievert/signals": "workspace:*",
+    "@sievert/component": "workspace:*",
+    "@sievert/di": "workspace:*",
+    "@sievert/directive": "workspace:*",
     "@sievert/renderer": "workspace:*",
-    "@sievert/component": "workspace:*"
+    "@sievert/signals": "workspace:*"
   }
 }

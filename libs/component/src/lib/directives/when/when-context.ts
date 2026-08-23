@@ -1,8 +1,8 @@
-import { withScope, type Scope } from '@sievert/di';
+import { useScope, type Scope } from '@sievert/di';
 import { detach, enqueue, type Source } from '@sievert/graph';
 import {
   createContext,
-  withContext,
+  useContext,
   type HtmlResult,
   type RenderContext,
 } from '@sievert/renderer';
@@ -20,21 +20,24 @@ export function createWhenContext<T>(
   render: (value: Signal<Truthy<T>>) => HtmlResult,
   diScope: Scope,
 ) {
-  const result = withScope(diScope, () =>
-    withContext(createContext(), () => render(createSignal(condition))),
-  );
+  const renderContext = createContext();
 
-  if (result.context.inputs.size > 0) {
+  using _ = useScope(diScope);
+  using __ = useContext(renderContext);
+
+  const { documentFragment } = render(createSignal(condition));
+
+  if (renderContext.inputs.size > 0) {
     throw new Error('input() called outside component context');
   }
 
-  if (result.context.outputs.size > 0) {
+  if (renderContext.outputs.size > 0) {
     throw new Error('output() called outside component context');
   }
 
   return {
-    renderContext: result.context,
-    nodes: [...result.documentFragment.childNodes],
+    renderContext,
+    nodes: [...documentFragment.childNodes],
   };
 }
 

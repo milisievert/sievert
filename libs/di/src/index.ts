@@ -5,7 +5,7 @@ export {
   createScope,
   inject,
   provide,
-  withScope,
+  useScope,
   type Scope,
 } from './lib/scope.js';
 export { token, type DiToken, type Token } from './lib/token.js';
