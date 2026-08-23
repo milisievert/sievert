@@ -21,7 +21,7 @@ export {
   type Lifetime,
   type Scope,
 } from '@sievert/di';
-export { directive, directive2, type Directive } from '@sievert/directive';
+export { directive, type Directive } from '@sievert/directive';
 export { html } from '@sievert/renderer';
 export {
   computed,
