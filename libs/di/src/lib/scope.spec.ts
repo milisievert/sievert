@@ -1,4 +1,4 @@
-import { createScope, inject, provide, withScope } from './scope.js';
+import { createScope, inject, provide, useScope } from './scope.js';
 import { TOKEN, token } from './token.js';
 
 describe('scope', () => {
@@ -14,9 +14,10 @@ describe('scope', () => {
       const TEST_VALUE = token('test-value');
       const factory = () => 'test-value';
 
-      withScope(scope, () => {
+      {
+        using _ = useScope(scope);
         provide(TEST_VALUE, { factory });
-      });
+      }
 
       expect(scope.providers.size).toBe(1);
       expect(scope.providers.get(TEST_VALUE[TOKEN])).toEqual(
@@ -28,9 +29,10 @@ describe('scope', () => {
       const scope = createScope();
       const TestClass = class {};
 
-      withScope(scope, () => {
+      {
+        using _ = useScope(scope);
         provide(TestClass);
-      });
+      }
 
       expect(scope.providers.size).toBe(1);
       expect(scope.providers.get(TestClass)).toEqual(
@@ -42,9 +44,10 @@ describe('scope', () => {
       const scope = createScope();
       const TEST_VALUE = token('test-value');
 
-      withScope(scope, () => {
+      {
+        using _ = useScope(scope);
         provide(TEST_VALUE);
-      });
+      }
 
       expect(scope.providers.get(TEST_VALUE[TOKEN])).toEqual(
         expect.objectContaining({ lifetime: 'singleton' }),
@@ -56,10 +59,11 @@ describe('scope', () => {
       const Singleton = class {};
       const Transient = class {};
 
-      withScope(scope, () => {
+      {
+        using _ = useScope(scope);
         provide(Singleton, { lifetime: 'singleton' });
         provide(Transient, { lifetime: 'transient' });
-      });
+      }
 
       expect(scope.providers.get(Singleton)).toEqual(
         expect.objectContaining({ lifetime: 'singleton' }),
@@ -82,9 +86,8 @@ describe('scope', () => {
       const scope = createScope();
       const TEST_VALUE = token('test-value');
 
-      const result = withScope(scope, () =>
-        inject(TEST_VALUE, { optional: true }),
-      );
+      using _ = useScope(scope);
+      const result = inject(TEST_VALUE, { optional: true });
 
       expect(result).toBe(null);
     });
@@ -93,21 +96,20 @@ describe('scope', () => {
       const scope = createScope();
       const TEST_VALUE = token('test-value');
 
-      expect(() => withScope(scope, () => inject(TEST_VALUE))).toThrow(
-        'No provider for test-value',
-      );
+      expect(() => {
+        using _ = useScope(scope);
+        inject(TEST_VALUE);
+      }).toThrow('No provider for test-value');
     });
 
     it('returns provided value', () => {
       const scope = createScope();
       const TEST_VALUE = token('test-value');
 
-      withScope(scope, () => {
-        provide(TEST_VALUE, { factory: () => 'test value' });
-      });
+      using _ = useScope(scope);
+      provide(TEST_VALUE, { factory: () => 'test value' });
 
-      const result = withScope(scope, () => inject(TEST_VALUE));
-
+      const result = inject(TEST_VALUE);
       expect(result).toBe('test value');
     });
 
@@ -115,12 +117,10 @@ describe('scope', () => {
       const scope = createScope();
       const TestClass = class {};
 
-      withScope(scope, () => {
-        provide(TestClass);
-      });
+      using _ = useScope(scope);
+      provide(TestClass);
 
-      const result = withScope(scope, () => inject(TestClass));
-
+      const result = inject(TestClass);
       expect(result).toBeInstanceOf(TestClass);
     });
 
@@ -128,12 +128,11 @@ describe('scope', () => {
       const scope = createScope();
       const TestClass = class {};
 
-      withScope(scope, () => {
-        provide(TestClass, { lifetime: 'singleton' });
-      });
+      using _ = useScope(scope);
+      provide(TestClass, { lifetime: 'singleton' });
 
-      const result1 = withScope(scope, () => inject(TestClass));
-      const result2 = withScope(scope, () => inject(TestClass));
+      const result1 = inject(TestClass);
+      const result2 = inject(TestClass);
 
       expect(result1).toBe(result2);
     });
@@ -142,12 +141,11 @@ describe('scope', () => {
       const scope = createScope();
       const TestClass = class {};
 
-      withScope(scope, () => {
-        provide(TestClass, { lifetime: 'transient' });
-      });
+      using _ = useScope(scope);
+      provide(TestClass, { lifetime: 'transient' });
 
-      const result1 = withScope(scope, () => inject(TestClass));
-      const result2 = withScope(scope, () => inject(TestClass));
+      const result1 = inject(TestClass);
+      const result2 = inject(TestClass);
 
       expect(result1).not.toBe(result2);
     });

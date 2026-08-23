@@ -1,4 +1,4 @@
-import { createScope, withScope } from '@sievert/di';
+import { createScope, useScope } from '@sievert/di';
 import { directive } from '@sievert/directive';
 import {
   createSink,
@@ -11,7 +11,7 @@ import {
 } from '@sievert/graph';
 import {
   createContext,
-  withContext,
+  useContext,
   type HtmlResult,
   type RenderContext,
 } from '@sievert/renderer';
@@ -54,16 +54,18 @@ export const each = directive({
         let context = contexts.get(key);
 
         if (!context) {
+          const renderContext = createContext();
           const source = createSource(item);
 
-          const result = withScope(diScope, () =>
-            withContext(createContext(), () => render(createSignal(source))),
-          );
+          using _ = useScope(diScope);
+          using __ = useContext(renderContext);
+
+          const { documentFragment } = render(createSignal(source));
 
           context = {
-            renderContext: result.context,
-            nodes: [...result.documentFragment.childNodes],
             source,
+            renderContext,
+            nodes: [...documentFragment.childNodes],
           };
 
           contexts.set(key, context);

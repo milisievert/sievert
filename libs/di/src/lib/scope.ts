@@ -22,12 +22,13 @@ export function createScope() {
   return scope;
 }
 
-export function withScope<T>(scope: Scope, fn: () => T) {
+export function useScope(scope: Scope): Disposable {
   const prev = current;
   current = scope;
-  const result = fn();
-  current = prev;
-  return result;
+
+  return {
+    [Symbol.dispose]: () => (current = prev),
+  };
 }
 
 export function provide<T>(

@@ -36,6 +36,15 @@ export function withContext<T>(context: RenderContext, fn: () => T) {
   }
 }
 
+export function useContext(context: RenderContext): Disposable {
+  const prev = current;
+  current = context;
+
+  return {
+    [Symbol.dispose]: () => (current = prev),
+  };
+}
+
 export function activate(context: RenderContext, host: HTMLElement) {
   for (const sink of context.sinks) {
     enqueue(sink);
